@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model WorkspaceSettings {
+  id                  String   @id @default(cuid())
+  workspaceName       String   @default("AI Work Hub")
+  timezone            String   @default("Asia/Jakarta")
+  onboardingCompleted Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Project {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  goal        String?
+  status      String     @default("active")
+  priority    String     @default("medium")
+  dueDate     DateTime?
+  startDate   DateTime?
+  color       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  tasks       Task[]
+  notes       Note[]
+  inboxItems  InboxItem[]
+}
+
+model Task {
+  id               String    @id @default(cuid())
+  title            String
+  description      String?
+  status           String    @default("todo")
+  priority         String    @default("medium")
+  dueDate          DateTime?
+  startDate        DateTime?
+  estimatedMinutes Int?
+  aiNextAction     String?
+  projectId        String?
+  project          Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Note {
+  id        String    @id @default(cuid())
+  title     String
+  body      String
+  summary   String?
+  projectId String?
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model InboxItem {
+  id               String    @id @default(cuid())
+  title            String?
+  content          String
+  sourceType       String    @default("manual")
+  itemType         String    @default("capture")
+  status           String    @default("new")
+  suggestedAction  String?
+  suggestedDueDate DateTime?
+  projectId        String?
+  project          Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  sourceType  String    @default("manual")
+  startsAt    DateTime
+  endsAt      DateTime
+  isAllDay    Boolean   @default(false)
+  externalId  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model FileRecord {
+  id          String    @id @default(cuid())
+  name        String
+  fileType    String?
+  mimeType    String?
+  externalUrl String?
+  summary     String?
+  projectId   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model AiOutput {
+  id          String   @id @default(cuid())
+  outputType  String
+  targetType  String?
+  targetId    String?
+  title       String?
+  content     String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AiExtraction {
+  id          String   @id @default(cuid())
+  sourceType  String
+  sourceId    String
+  outputType  String
+  payload     Json
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AutomationRun {
+  id             String   @id @default(cuid())
+  workflow       String
+  source         String
+  status         String   @default("started")
+  externalId     String?
+  idempotencyKey String?
+  message        String?
+  payload        Json?
+  result         Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([workflow, createdAt])
+  @@index([source, createdAt])
+  @@index([externalId])
+  @@index([idempotencyKey])
+}
