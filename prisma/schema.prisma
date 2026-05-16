@@ -46,6 +46,7 @@ model Task {
   startDate        DateTime?
   estimatedMinutes Int?
   aiNextAction     String?
+  recurrence       String?
   projectId        String?
   project          Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   createdAt        DateTime  @default(now())

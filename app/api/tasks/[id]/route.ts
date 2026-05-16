@@ -21,6 +21,7 @@ export async function PATCH(req: Request, context: RouteContext) {
       startDate?: Date | null;
       estimatedMinutes?: number | null;
       aiNextAction?: string | null;
+      recurrence?: string | null;
     } = {};
 
     if (typeof body.title === "string") data.title = body.title.trim();
@@ -42,6 +43,8 @@ export async function PATCH(req: Request, context: RouteContext) {
     if (typeof body.startDate === "string")
       data.startDate = new Date(body.startDate);
     if (body.startDate === null) data.startDate = null;
+    if (typeof body.recurrence === "string") data.recurrence = body.recurrence;
+    if (body.recurrence === null) data.recurrence = null;
 
     const task = await prisma.task.update({
       where: { id },

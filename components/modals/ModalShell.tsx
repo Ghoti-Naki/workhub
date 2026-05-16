@@ -8,11 +8,13 @@ export function ModalShell({
   open,
   onClose,
   children,
+  size = "md",
 }: {
   title: string;
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  size?: "md" | "lg";
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = `modal-title-${title.replace(/\s+/g, "-").toLowerCase()}`;
@@ -41,7 +43,7 @@ export function ModalShell({
       onClose={onClose}
       onClick={handleClick}
       aria-labelledby={titleId}
-      className="w-full max-w-md bg-white p-6"
+      className={`m-auto w-full rounded-2xl bg-white p-6 shadow-xl backdrop:bg-slate-900/40 backdrop:backdrop-blur-sm max-sm:mx-3 max-sm:my-auto ${size === "lg" ? "max-w-3xl" : "max-w-md"}`}
     >
       <div className="flex items-center justify-between">
         <h2 id={titleId} className="text-lg font-semibold text-slate-900">

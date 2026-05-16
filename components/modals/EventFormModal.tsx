@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { ModalShell } from "@/components/modals/ModalShell";
 import { cn } from "@/lib/types";
 import { inputCls, inputErrorCls, labelCls } from "@/components/shared/styles";
+import type { WorkspaceEvent } from "@/lib/types";
 
 type Errors = {
   title?: string;
@@ -13,12 +14,26 @@ type Errors = {
   saveError?: string;
 };
 
+function toLocalDateStr(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-CA"); // YYYY-MM-DD
+}
+
+function toLocalTimeStr(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return d.toTimeString().slice(0, 5); // HH:MM
+}
+
 export function EventFormModal({
   open,
+  editing,
   onClose,
   onSaved,
 }: {
   open: boolean;
+  editing?: WorkspaceEvent | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -33,15 +48,15 @@ export function EventFormModal({
 
   useEffect(() => {
     if (open) {
-      setTitle("");
-      setDate("");
-      setStartTime("");
-      setEndTime("");
-      setDescription("");
-      setLocation("");
+      setTitle(editing?.title ?? "");
+      setDate(toLocalDateStr(editing?.startsAt));
+      setStartTime(toLocalTimeStr(editing?.startsAt));
+      setEndTime(toLocalTimeStr(editing?.endsAt));
+      setDescription(editing?.description ?? "");
+      setLocation(editing?.location ?? "");
       setErrors({});
     }
-  }, [open]);
+  }, [open, editing]);
 
   function validate(): boolean {
     const errs: Errors = {};
@@ -65,8 +80,10 @@ export function EventFormModal({
     setSaving(true);
     setErrors({});
     try {
-      const res = await fetch("/api/events", {
-        method: "POST",
+      const url = editing ? `/api/events/${editing.id}` : "/api/events";
+      const method = editing ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
@@ -87,8 +104,10 @@ export function EventFormModal({
     }
   }
 
+  const isEdit = !!editing;
+
   return (
-    <ModalShell title="New Event" open={open} onClose={onClose}>
+    <ModalShell title={isEdit ? "Edit Event" : "New Event"} open={open} onClose={onClose}>
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>
           <label className={labelCls}>Title *</label>
@@ -156,7 +175,7 @@ export function EventFormModal({
             Cancel
           </button>
           <button type="submit" disabled={saving} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
-            {saving ? "Saving..." : "Create Event"}
+            {saving ? "Saving..." : isEdit ? "Save Changes" : "Create Event"}
           </button>
         </div>
       </form>

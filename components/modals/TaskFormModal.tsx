@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { ModalShell } from "@/components/modals/ModalShell";
 import { cn } from "@/lib/types";
 import { inputCls, inputErrorCls, selectCls, labelCls } from "@/components/shared/styles";
-import type { Task, Project, ProjectPriority, TaskStatus } from "@/lib/types";
+import type { Task, Project, ProjectPriority, TaskStatus, RecurrenceInterval } from "@/lib/types";
 
 type Errors = { title?: string; saveError?: string };
 
@@ -27,6 +27,8 @@ export function TaskFormModal({
   const [priority, setPriority] = useState<ProjectPriority>("medium");
   const [status, setStatus] = useState<TaskStatus>("todo");
   const [dueDate, setDueDate] = useState("");
+  const [dueTime, setDueTime] = useState("");
+  const [recurrence, setRecurrence] = useState<RecurrenceInterval | "">("");
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
 
@@ -37,7 +39,10 @@ export function TaskFormModal({
       setProjectId(task?.projectId ?? "");
       setPriority(task?.priority ?? "medium");
       setStatus(task?.status ?? "todo");
-      setDueDate(task?.dueDate ? task.dueDate.slice(0, 10) : "");
+      const rawDue = task?.dueDate ?? "";
+      setDueDate(rawDue ? rawDue.slice(0, 10) : "");
+      setDueTime(rawDue && rawDue.length > 10 ? rawDue.slice(11, 16) : "");
+      setRecurrence((task?.recurrence as RecurrenceInterval | "") ?? "");
       setErrors({});
     }
   }, [open, task]);
@@ -66,7 +71,8 @@ export function TaskFormModal({
           projectId: projectId || null,
           priority,
           status,
-          dueDate: dueDate || null,
+          dueDate: dueDate ? (dueTime ? `${dueDate}T${dueTime}` : dueDate) : null,
+          recurrence: recurrence || null,
         }),
       });
       if (!res.ok) throw new Error();
@@ -132,9 +138,27 @@ export function TaskFormModal({
             </select>
           </div>
         </div>
-        <div>
-          <label className={labelCls}>Due Date</label>
-          <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Due Date</label>
+            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Due Time <span className="text-slate-400">(optional)</span></label>
+            <input type="time" value={dueTime} onChange={(e) => setDueTime(e.target.value)} disabled={!dueDate} className={cn(inputCls, !dueDate ? "opacity-40 cursor-not-allowed" : "")} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Recurrence</label>
+            <select value={recurrence} onChange={(e) => setRecurrence(e.target.value as RecurrenceInterval | "")} className={selectCls}>
+              <option value="">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div />
         </div>
         {errors.saveError ? <p role="alert" className="text-sm text-rose-600">{errors.saveError}</p> : null}
         <div className="flex justify-end gap-3 pt-2">

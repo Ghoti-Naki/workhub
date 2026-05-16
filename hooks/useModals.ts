@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Project, Note, Task } from "@/lib/types";
+import type { Project, Note, Task, WorkspaceEvent } from "@/lib/types";
 
 export function useModals() {
   const [captureModalOpen, setCaptureModalOpen] = useState(false);
@@ -12,6 +12,8 @@ export function useModals() {
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<WorkspaceEvent | null>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   function openCaptureModal() { setCaptureModalOpen(true); }
   function closeCaptureModal() { setCaptureModalOpen(false); }
@@ -28,14 +30,33 @@ export function useModals() {
   function openEditNote(note: Note) { setEditingNote(note); setNoteModalOpen(true); }
   function closeNoteModal() { setNoteModalOpen(false); setEditingNote(null); }
 
-  function openCreateEvent() { setEventModalOpen(true); }
-  function closeEventModal() { setEventModalOpen(false); }
+  function openCreateEvent() { setEditingEvent(null); setEventModalOpen(true); }
+  function openEditEvent(event: WorkspaceEvent) { setEditingEvent(event); setEventModalOpen(true); }
+  function closeEventModal() { setEventModalOpen(false); setEditingEvent(null); }
+
+  function openUploadModal() { setUploadModalOpen(true); }
+  function closeUploadModal() { setUploadModalOpen(false); }
+
+  const isAnyModalOpen =
+    captureModalOpen || projectModalOpen || taskModalOpen ||
+    noteModalOpen || eventModalOpen || uploadModalOpen;
+
+  function closeAllModals() {
+    setCaptureModalOpen(false);
+    setProjectModalOpen(false); setEditingProject(null);
+    setTaskModalOpen(false); setEditingTask(null);
+    setNoteModalOpen(false); setEditingNote(null);
+    setEventModalOpen(false); setEditingEvent(null);
+    setUploadModalOpen(false);
+  }
 
   return {
     captureModalOpen, openCaptureModal, closeCaptureModal,
     projectModalOpen, editingProject, openCreateProject, openEditProject, closeProjectModal,
     taskModalOpen, editingTask, openCreateTask, openEditTask, closeTaskModal,
     noteModalOpen, editingNote, openCreateNote, openEditNote, closeNoteModal,
-    eventModalOpen, openCreateEvent, closeEventModal,
+    eventModalOpen, editingEvent, openCreateEvent, openEditEvent, closeEventModal,
+    uploadModalOpen, openUploadModal, closeUploadModal,
+    isAnyModalOpen, closeAllModals,
   };
 }

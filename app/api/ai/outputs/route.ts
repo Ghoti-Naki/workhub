@@ -1,3 +1,10 @@
+/**
+ * GET /api/ai/outputs
+ *
+ * Returns persisted AI output records (summaries, briefs, copilot answers).
+ * Accepts optional query params: outputType, targetType, targetId.
+ * Results are ordered newest-first and capped at 20.
+ */
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {

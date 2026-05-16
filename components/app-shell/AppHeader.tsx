@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import type { AppHeaderProps } from "@/lib/types";
 
 export function AppHeader({
@@ -12,9 +12,10 @@ export function AppHeader({
   onSearchChange,
   searchResults,
   onSearchResultClick,
+  searchInputRef,
 }: AppHeaderProps) {
   return (
-    <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-6 lg:py-5">
       <div>
         <p className="text-sm font-medium text-slate-500">AI Work Hub</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -30,24 +31,43 @@ export function AppHeader({
           <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm shadow-sm">
             <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
             <input
+              ref={searchInputRef}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search workspace"
+              placeholder="Search workspace  /"
               aria-label="Search workspace"
-              className="min-w-0 w-48 bg-transparent text-slate-700 outline-none placeholder:text-slate-400"
+              className="min-w-0 w-full bg-transparent text-slate-700 outline-none placeholder:text-slate-400 sm:w-48"
             />
+            {searchQuery ? (
+              <button
+                onClick={() => onSearchChange("")}
+                aria-label="Clear search"
+                className="shrink-0 rounded-lg p-0.5 text-slate-400 hover:text-slate-700"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            ) : null}
           </div>
-          {searchQuery.trim() ? (
-            <div className="absolute left-0 right-0 top-full z-40 mt-1 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+          {searchQuery.trim().length >= 2 ? (
+            <div className="absolute left-0 right-0 top-full z-40 mt-1 max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-lg">
               {searchResults.length > 0 ? (
                 searchResults.map((result) => (
                   <button
                     key={`${result.type}-${result.id}`}
                     onClick={() => onSearchResultClick(result)}
-                    className="flex w-full flex-col gap-0.5 px-4 py-3 text-left hover:bg-slate-50"
+                    className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-slate-50"
                   >
-                    <span className="text-sm font-medium text-slate-900">{result.title}</span>
-                    <span className="text-xs text-slate-500">{result.subtitle}</span>
+                    <span className="mt-0.5 shrink-0 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                      {result.type}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-slate-900">{result.title}</span>
+                      {result.snippet ? (
+                        <span className="mt-0.5 block truncate text-xs text-slate-500">{result.snippet}</span>
+                      ) : (
+                        <span className="mt-0.5 block text-xs text-slate-400">{result.subtitle}</span>
+                      )}
+                    </div>
                   </button>
                 ))
               ) : (

@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import { AlertCircle, CheckCircle2, ChevronRight, Clock3 } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, Clock3, Pencil } from "lucide-react";
 import { Badge } from "@/components/shared/Badge";
 import { SectionCard } from "@/components/shared/SectionCard";
 import { AIErrorCallout } from "@/components/shared/AIErrorCallout";
+import { formatDueDate } from "@/lib/date";
 import type { HomePageProps, WorkspaceEvent, EventSource } from "@/lib/types";
 
 export function HomePage({
@@ -18,7 +19,9 @@ export function HomePage({
   dailyBriefError,
   onGenerateDailyBrief,
   onCompleteTask,
+  onEditTask,
   onOpenPage,
+  onOpenProject,
 }: HomePageProps) {
   const overdue = dashboard?.overdueTasks ?? [];
   const topTasks = dashboard?.topTasks ?? [];
@@ -66,9 +69,10 @@ export function HomePage({
           <button
             onClick={onGenerateDailyBrief}
             disabled={loadingDailyBrief}
-            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loadingDailyBrief ? "Generating..." : "Generate Brief"}
+            {loadingDailyBrief && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" />}
+            {loadingDailyBrief ? "Generating…" : "Generate Brief"}
           </button>
         }
       >
@@ -122,9 +126,11 @@ export function HomePage({
                     </button>
                     <div>
                       <p className="font-medium text-slate-900">{task.title}</p>
-                      <p className="mt-1 text-sm text-slate-500">
-                        Due {task.dueDate}
-                      </p>
+                      {(() => { const d = formatDueDate(task.dueDate); return !d.isEmpty ? (
+                        <p className={`mt-1 text-sm ${d.isOverdue ? "text-rose-600 font-medium" : d.isToday ? "text-amber-600" : "text-slate-500"}`}>
+                          {d.label}
+                        </p>
+                      ) : null; })()}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -139,6 +145,13 @@ export function HomePage({
                     >
                       {task.priority}
                     </Badge>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onEditTask(task); }}
+                      aria-label="Edit task"
+                      className="rounded-lg p-1 text-slate-400 hover:text-slate-700"
+                    >
+                      <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
                     <ChevronRight className="h-4 w-4 text-slate-400" />
                   </div>
                 </div>
@@ -164,15 +177,22 @@ export function HomePage({
                     <div className="flex items-start gap-3">
                       <AlertCircle className="mt-0.5 h-4 w-4 text-rose-600" />
                       <div>
-                        <p className="font-medium text-rose-900">
-                          {task.title}
-                        </p>
-                        <p className="mt-1 text-sm text-rose-700">
-                          Due {task.dueDate}
+                        <p className="font-medium text-rose-900">{task.title}</p>
+                        <p className="mt-1 text-sm font-medium text-rose-700">
+                          {formatDueDate(task.dueDate).label}
                         </p>
                       </div>
                     </div>
-                    <Badge tone="urgent">act now</Badge>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onCompleteTask(task.id)}
+                        aria-label="Mark task complete"
+                        className="rounded-full border border-rose-300 p-1.5 text-rose-600 hover:bg-rose-100"
+                      >
+                        <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                      <Badge tone="urgent">act now</Badge>
+                    </div>
                   </div>
                 ))
               )}
@@ -243,7 +263,7 @@ export function HomePage({
               {projects.map((project) => (
                 <button
                   key={project.id}
-                  onClick={() => onOpenPage("projects")}
+                  onClick={() => onOpenProject(project.id)}
                   className="block w-full rounded-2xl border border-slate-200 p-4 text-left transition hover:bg-slate-50"
                 >
                   <div className="flex items-start justify-between gap-3">

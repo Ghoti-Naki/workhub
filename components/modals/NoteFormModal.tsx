@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { ModalShell } from "@/components/modals/ModalShell";
-import { cn } from "@/lib/types";
+import { MarkdownEditor } from "@/components/shared/MarkdownEditor";
 import { inputCls, inputErrorCls, selectCls, labelCls } from "@/components/shared/styles";
 import type { Note, Project } from "@/lib/types";
 
@@ -72,7 +72,7 @@ export function NoteFormModal({
   }
 
   return (
-    <ModalShell title={note ? "Edit Note" : "New Note"} open={open} onClose={onClose}>
+    <ModalShell title={note ? "Edit Note" : "New Note"} open={open} onClose={onClose} size="lg">
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>
           <label className={labelCls}>Title *</label>
@@ -87,13 +87,10 @@ export function NoteFormModal({
         </div>
         <div>
           <label className={labelCls}>Body *</label>
-          <textarea
+          <MarkdownEditor
             value={body}
-            onChange={(e) => { setBody(e.target.value); setErrors((prev) => ({ ...prev, body: undefined })); }}
-            rows={5}
-            className={cn(errors.body ? inputErrorCls : inputCls, "resize-none")}
-            placeholder="Write your note here..."
-            aria-describedby={errors.body ? "note-body-error" : undefined}
+            onChange={(v) => { setBody(v); setErrors((prev) => ({ ...prev, body: undefined })); }}
+            minHeight={220}
           />
           {errors.body ? <p id="note-body-error" role="alert" className="mt-1 text-xs text-rose-600">{errors.body}</p> : null}
         </div>

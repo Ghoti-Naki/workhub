@@ -1,3 +1,10 @@
+/**
+ * GET /api/ai/extractions
+ *
+ * Returns AI extraction records (suggested tasks derived from notes).
+ * Accepts optional query params: sourceType, sourceId, outputType.
+ * Results are ordered newest-first and capped at 20.
+ */
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {

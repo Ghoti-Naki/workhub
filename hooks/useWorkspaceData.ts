@@ -15,7 +15,9 @@ import type {
   AiExtraction,
   CopilotOutput,
   AutomationRun,
+  WorkspaceSettings,
   ApiResponse,
+  ProjectStatus,
 } from "@/lib/types";
 import { initialEvents } from "@/lib/constants";
 
@@ -51,7 +53,10 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
   const [copilotHistory, setCopilotHistory] = useState<CopilotOutput[]>([]);
   const [loadingCopilot, setLoadingCopilot] = useState(false);
   const [copilotError, setCopilotError] = useState<string | null>(null);
+  const [streamingText, setStreamingText] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
   const [automationRuns, setAutomationRuns] = useState<AutomationRun[]>([]);
+  const [workspaceSettings, setWorkspaceSettings] = useState<WorkspaceSettings | null>(null);
 
   async function loadWorkspaceData() {
     try {
@@ -68,6 +73,7 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
         dashboardRes,
         dailyBriefRes,
         automationRunsRes,
+        workspaceRes,
       ] = await Promise.all([
         fetch("/api/projects", { cache: "no-store" }),
         fetch("/api/tasks?page=1&pageSize=25", { cache: "no-store" }),
@@ -78,6 +84,7 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
         fetch("/api/dashboard/home", { cache: "no-store" }),
         fetch("/api/ai/outputs?outputType=daily_brief&targetType=workspace", { cache: "no-store" }),
         fetch("/api/automation/runs", { cache: "no-store" }),
+        fetch("/api/workspace", { cache: "no-store" }),
       ]);
 
       if (
@@ -107,11 +114,12 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
         const end = e.endsAt
           ? new Date(e.endsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
           : "TBD";
-        return { id: e.id, title: e.title, time: `${start} - ${end}`, source: e.sourceType };
+        return { id: e.id, title: e.title, time: `${start} - ${end}`, source: e.sourceType, startsAt: e.startsAt ?? null, endsAt: e.endsAt ?? null, description: e.description ?? null, location: e.location ?? null };
       });
       const filesJson: ApiResponse<FileRecord[]> = await filesRes.json();
       const dailyBriefJson: ApiResponse<AiOutput[]> = await dailyBriefRes.json();
       const automationRunsJson: ApiResponse<AutomationRun[]> = await automationRunsRes.json();
+      const workspaceJson: ApiResponse<WorkspaceSettings> = await workspaceRes.json();
 
       setDailyBrief(dailyBriefJson.data?.[0] ?? null);
       setFiles(filesJson.data ?? []);
@@ -126,6 +134,7 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
       setDashboard(dashboardJson.data ?? null);
       setEvents(mappedEvents);
       setAutomationRuns(automationRunsJson.data ?? []);
+      setWorkspaceSettings(workspaceJson.data ?? null);
     } catch (error) {
       console.error("Failed to load workspace data", error);
       setLoadError("Could not load dashboard data from the database yet.");
@@ -203,6 +212,14 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
     }
   }
 
+  function nextRecurrenceDueDate(dueDate: string, recurrence: string): string {
+    const base = dueDate ? new Date(dueDate) : new Date();
+    if (recurrence === "daily") base.setDate(base.getDate() + 1);
+    else if (recurrence === "weekly") base.setDate(base.getDate() + 7);
+    else if (recurrence === "monthly") base.setMonth(base.getMonth() + 1);
+    return base.toISOString().slice(0, 10);
+  }
+
   async function handleCompleteTask(taskId: string) {
     const existingTask = tasks.find((t) => t.id === taskId);
     if (!existingTask) return;
@@ -214,6 +231,25 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
         body: JSON.stringify({ status: nextStatus }),
       });
       if (!response.ok) throw new Error("Failed to update task.");
+
+      // Spawn next occurrence when a recurring task is marked done
+      if (nextStatus === "done" && existingTask.recurrence) {
+        const nextDue = nextRecurrenceDueDate(existingTask.dueDate, existingTask.recurrence);
+        await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: existingTask.title,
+            description: existingTask.description ?? null,
+            priority: existingTask.priority,
+            status: "todo",
+            projectId: existingTask.projectId ?? null,
+            dueDate: nextDue,
+            recurrence: existingTask.recurrence,
+          }),
+        });
+      }
+
       await loadWorkspaceData();
     } catch (error) {
       console.error("Failed to toggle task completion", error);
@@ -272,6 +308,97 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
     }
   }
 
+  async function handleCycleTaskStatus(taskId: string, currentStatus: string) {
+    const next = currentStatus === "todo" ? "in_progress" : currentStatus === "in_progress" ? "done" : "todo";
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      if (!response.ok) throw new Error("Failed to update task status.");
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: next } : t)));
+    } catch (error) {
+      console.error("Failed to cycle task status", error);
+      throw error;
+    }
+  }
+
+  async function handleDeleteTask(taskId: string) {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete task.");
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    } catch (error) {
+      console.error("Failed to delete task", error);
+      throw error;
+    }
+  }
+
+  function softRemoveTask(taskId: string): () => void {
+    const removed = tasks.find((t) => t.id === taskId);
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    return () => {
+      if (removed) setTasks((prev) => [...prev, removed].sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1)));
+    };
+  }
+
+  async function commitDeleteTask(taskId: string) {
+    const response = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+    if (!response.ok) throw new Error("Failed to delete task.");
+  }
+
+  async function handleCycleProjectStatus(projectId: string, currentStatus: string) {
+    const cycle: Record<string, ProjectStatus> = { active: "on_hold", on_hold: "completed", completed: "active", paused: "active" };
+    const nextStatus: ProjectStatus = cycle[currentStatus] ?? "active";
+    setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, status: nextStatus } : p));
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!res.ok) throw new Error("Failed to update project status.");
+    } catch (error) {
+      setProjects((prev) => prev.map((p) => p.id === projectId ? { ...p, status: currentStatus as ProjectStatus } : p));
+      console.error("Failed to cycle project status", error);
+      throw error;
+    }
+  }
+
+  async function handleDeleteProject(projectId: string) {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete project.");
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
+    } catch (error) {
+      console.error("Failed to delete project", error);
+      throw error;
+    }
+  }
+
+  async function handleDeleteEvent(eventId: string) {
+    try {
+      const response = await fetch(`/api/events/${eventId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete event.");
+      setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    } catch (error) {
+      console.error("Failed to delete event", error);
+      throw error;
+    }
+  }
+
+  async function handleDeleteNote(noteId: string) {
+    try {
+      const response = await fetch(`/api/notes/${noteId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete note.");
+      setNotes((prev) => prev.filter((n) => n.id !== noteId));
+    } catch (error) {
+      console.error("Failed to delete note", error);
+      throw error;
+    }
+  }
+
   async function handleConvertInbox(inboxId: string, targetType: "task" | "note") {
     try {
       const response = await fetch(`/api/inbox/${inboxId}/convert`, {
@@ -284,6 +411,17 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
       setPage(targetType === "task" ? "tasks" : "notes");
     } catch (error) {
       console.error("Failed to convert inbox item", error);
+    }
+  }
+
+  async function handleDeleteInbox(inboxId: string) {
+    try {
+      const response = await fetch(`/api/inbox/${inboxId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete inbox item.");
+      setInboxItems((prev) => prev.filter((i) => i.id !== inboxId));
+    } catch (error) {
+      console.error("Failed to delete inbox item", error);
+      throw error;
     }
   }
 
@@ -353,29 +491,54 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
     const finalPrompt = (promptText ?? copilotPrompt).trim();
     if (!finalPrompt) return;
     try {
-      setLoadingCopilot(true);
+      setIsStreaming(true);
+      setStreamingText("");
       setCopilotError(null);
-      const response = await fetch("/api/ai/copilot", {
+      setPage("copilot");
+
+      const response = await fetch("/api/ai/copilot/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: finalPrompt }),
       });
-      const json: ApiResponse<CopilotOutput> = await response.json();
-      if (!response.ok || json.error) {
-        const msg =
-          json.error?.code === "AI_NOT_CONFIGURED"
-            ? "AI Copilot is not configured. Add OPENAI_API_KEY to your .env file to enable this feature."
-            : "Failed to get a Copilot answer. Please try again.";
-        setCopilotError(msg);
+
+      if (!response.ok || !response.body) {
+        setCopilotError("Failed to get a Copilot answer. Please try again.");
         return;
       }
-      if (json.data) await loadCopilotHistory();
-      setCopilotPrompt("");
-      setPage("copilot");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          try {
+            const event = JSON.parse(raw);
+            if (typeof event.delta === "string") {
+              setStreamingText((prev) => prev + event.delta);
+            } else if (event.done) {
+              await loadCopilotHistory();
+              setCopilotPrompt("");
+            }
+          } catch {
+            // skip unparseable
+          }
+        }
+      }
     } catch {
       setCopilotError("Failed to get a Copilot answer. Please try again.");
     } finally {
-      setLoadingCopilot(false);
+      setIsStreaming(false);
     }
   }
 
@@ -395,6 +558,15 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
       console.error("Failed to accept extraction", error);
     } finally {
       setAcceptingExtraction(false);
+    }
+  }
+
+  async function handleClearCopilotHistory() {
+    try {
+      await fetch("/api/ai/copilot/history", { method: "DELETE" });
+      setCopilotHistory([]);
+    } catch (error) {
+      console.error("Failed to clear copilot history", error);
     }
   }
 
@@ -437,6 +609,22 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
       console.error("Failed to load more inbox items", error);
     } finally {
       setLoadingMoreInbox(false);
+    }
+  }
+
+  async function handleUpdateWorkspace(patch: { workspaceName?: string; timezone?: string }) {
+    try {
+      const res = await fetch("/api/workspace", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const json: ApiResponse<WorkspaceSettings> = await res.json();
+      if (!res.ok) throw new Error(json.error?.message ?? "Failed to update workspace");
+      setWorkspaceSettings(json.data);
+    } catch (error) {
+      console.error("Failed to update workspace settings", error);
+      throw error;
     }
   }
 
@@ -485,7 +673,11 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
     copilotHistory,
     loadingCopilot,
     copilotError,
+    streamingText,
+    isStreaming,
     automationRuns,
+    workspaceSettings,
+    handleUpdateWorkspace,
     loadingData,
     loadError,
     loadWorkspaceData,
@@ -500,12 +692,22 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
     handleCreateInboxItem,
     handleCreateFile,
     handleDeleteFile,
+    handleCycleTaskStatus,
+    handleDeleteTask,
+    softRemoveTask,
+    commitDeleteTask,
+    handleCycleProjectStatus,
+    handleDeleteProject,
+    handleDeleteEvent,
+    handleDeleteNote,
+    handleDeleteInbox,
     handleConvertInbox,
     handleArchiveInbox,
     handleGenerateProjectSummary,
     handleGenerateDailyBrief,
     handleExtractTasksFromNote,
     handleAskCopilot,
+    handleClearCopilotHistory,
     handleAcceptExtraction,
     toggleExtractionItem,
   };

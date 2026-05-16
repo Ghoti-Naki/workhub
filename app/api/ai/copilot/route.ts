@@ -1,5 +1,18 @@
+/**
+ * POST /api/ai/copilot
+ *
+ * Answers a free-form workspace question grounded in the user's live data.
+ * Fetches the top ~6 records per entity type, builds a plaintext context
+ * block, and sends it to the AI model. The answer and its source list are
+ * persisted as an AiOutput record (outputType: "copilot_answer",
+ * targetType: "workspace") so history can be shown and cleared by the UI.
+ * Falls back gracefully when no OpenAI key is configured.
+ */
 import { prisma } from "@/lib/prisma";
 import { generateText } from "@/lib/ai";
+import { DEMO_COPILOT_ANSWER } from "@/lib/ai/demoFixtures";
+
+const isDemoMode = process.env.DEMO_MODE === "true";
 
 interface CopilotSource {
   type: string;
@@ -115,11 +128,13 @@ Files:
 ${files.map((f) => `- ${f.name} | ${f.fileType ?? f.mimeType ?? "unknown"} | ${f.summary ?? "no summary"}`).join("\n") || "- none"}
 `;
 
-    const answer = await generateText({
-      systemPrompt:
-        "You are a grounded workspace copilot. Use only the provided workspace data. Be concise, practical, and action-oriented. Do not invent records that are not present.",
-      userPrompt: contextBlock,
-    });
+    const answer = isDemoMode
+      ? DEMO_COPILOT_ANSWER
+      : await generateText({
+          systemPrompt:
+            "You are a grounded workspace copilot. Use only the provided workspace data. Be concise, practical, and action-oriented. Do not invent records that are not present.",
+          userPrompt: contextBlock,
+        });
 
     const output = await prisma.aiOutput.create({
       data: {

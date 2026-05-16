@@ -38,11 +38,13 @@ export async function POST(req: Request) {
       typeof body.projectId === "string" ? body.projectId : null;
     const dueDate =
       typeof body.dueDate === "string" ? body.dueDate : null;
+    const recurrence =
+      typeof body.recurrence === "string" ? body.recurrence : null;
 
     if (!title) return VALIDATION_ERROR("Task title is required.");
 
     const task = await prisma.task.create({
-      data: { title, description, priority, status, projectId, dueDate },
+      data: { title, description, priority, status, projectId, dueDate, recurrence },
       include: { project: true },
     });
 

@@ -43,6 +43,10 @@ next-env.d.ts
 
 generated/prisma/
 
+# uploaded files (keep directory structure, ignore content)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
 PORTFOLIO_PROJECT_DOCUMENT.md
 PROJECT_CONTEXT.md
 TASK_LIST.md

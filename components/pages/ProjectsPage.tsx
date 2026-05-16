@@ -89,7 +89,8 @@ function ProjectDetailPanel({
         action={
           <button
             onClick={() => onGenerateSummary(project.id)}
-            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             Generate Summary
           </button>
@@ -230,6 +231,8 @@ export function ProjectsPage({
   onGenerateSummary,
   onCreateProject,
   onEditProject,
+  onDeleteProject,
+  onCycleStatus,
 }: {
   projects: Project[];
   tasks: Task[];
@@ -240,14 +243,27 @@ export function ProjectsPage({
   onGenerateSummary: (projectId: string) => void;
   onCreateProject: () => void;
   onEditProject: (project: Project) => void;
+  onDeleteProject: (id: string) => Promise<void>;
+  onCycleStatus: (id: string, status: string) => Promise<void>;
 }) {
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("priority");
 
-  const filtered = useMemo(
-    () =>
-      projects.filter((p) => statusFilter === "all" || p.status === statusFilter),
-    [projects, statusFilter],
-  );
+  const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+
+  const filtered = useMemo(() => {
+    const list = projects.filter((p) => statusFilter === "all" || p.status === statusFilter);
+    return [...list].sort((a, b) => {
+      if (sortBy === "name") return a.title.localeCompare(b.title);
+      if (sortBy === "due") {
+        const aD = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+        const bD = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+        return aD - bD;
+      }
+      // priority (default)
+      return (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9);
+    });
+  }, [projects, statusFilter, sortBy]);
 
   return (
     <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
@@ -280,6 +296,17 @@ export function ProjectsPage({
                 { value: "paused", label: "Paused" },
               ],
             },
+            {
+              key: "sort",
+              label: "Sort",
+              value: sortBy,
+              onChange: setSortBy,
+              options: [
+                { value: "priority", label: "Priority" },
+                { value: "name", label: "Name" },
+                { value: "due", label: "Due date" },
+              ],
+            },
           ]}
         />
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-1">
@@ -296,12 +323,12 @@ export function ProjectsPage({
             </div>
           ) : (
           filtered.map((project) => {
-            const projectTasks = tasks.filter(
-              (task) => task.projectId === project.id && task.status !== "done",
-            );
-            const projectNotes = notes.filter(
-              (note) => note.projectId === project.id,
-            );
+            const allProjectTasks = tasks.filter((task) => task.projectId === project.id);
+            const doneTasks = allProjectTasks.filter((task) => task.status === "done").length;
+            const totalTasks = allProjectTasks.length;
+            const openTasks = totalTasks - doneTasks;
+            const progressPct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+            const projectNotes = notes.filter((note) => note.projectId === project.id);
 
             return (
               <SectionCard
@@ -321,20 +348,52 @@ export function ProjectsPage({
                     >
                       Edit
                     </button>
+                    <button
+                      onClick={() => onDeleteProject(project.id)}
+                      className="rounded-xl border border-rose-200 px-3 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                    >
+                      Delete
+                    </button>
                   </div>
                 }
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between text-sm text-slate-500">
-                    <span>Status: {project.status}</span>
+                    <button
+                      onClick={() => onCycleStatus(project.id, project.status)}
+                      title="Click to change status"
+                      className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition hover:opacity-80 ${
+                        project.status === "active" ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : project.status === "completed" ? "border-slate-200 bg-slate-100 text-slate-500"
+                        : project.status === "on_hold" ? "border-amber-200 bg-amber-50 text-amber-700"
+                        : "border-slate-200 bg-white text-slate-600"
+                      }`}
+                    >
+                      {project.status.replace("_", " ")}
+                    </button>
                     <span>Due {project.dueDate}</span>
                   </div>
+
+                  {totalTasks > 0 && (
+                    <div>
+                      <div className="mb-1.5 flex items-center justify-between text-xs text-slate-500">
+                        <span>{doneTasks} of {totalTasks} tasks done</span>
+                        <span className="font-medium text-slate-700">{progressPct}%</span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className="h-2 rounded-full bg-slate-900 transition-all duration-300"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-2xl bg-slate-50 p-3">
                       <p className="text-slate-500">Open Tasks</p>
                       <p className="mt-1 text-lg font-semibold text-slate-900">
-                        {projectTasks.length}
+                        {openTasks}
                       </p>
                     </div>
                     <div className="rounded-2xl bg-slate-50 p-3">

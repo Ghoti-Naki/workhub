@@ -1,0 +1,27 @@
+# Dependencies (re-installed in builder layer)
+node_modules
+
+# Build output (created during Docker build)
+.next
+
+# Local env files — never bake credentials into the image
+.env
+.env.local
+.env.*.local
+
+# Development tooling
+.git
+.gitignore
+*.md
+!README.md
+
+# Test artifacts
+coverage
+.nyc_output
+tests/__snapshots__
+
+# Editor and OS noise
+.DS_Store
+*.log
+.vscode
+.idea

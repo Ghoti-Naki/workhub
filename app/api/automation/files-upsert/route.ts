@@ -1,3 +1,12 @@
+/**
+ * POST /api/automation/files-upsert
+ *
+ * Creates or updates a file record from an n8n workflow (e.g. Google Drive
+ * sync). Matches by `externalUrl` — if a record already exists at that URL it
+ * is updated in place; otherwise a new FileRecord is created. Requires
+ * AUTOMATION_SECRET Bearer token. Logs every run to AutomationRun.
+ * Rate-limited to 60 requests per minute per IP.
+ */
 import { prisma } from "@/lib/prisma";
 import { isValidAutomationSecret } from "@/lib/automation";
 import {
@@ -5,6 +14,7 @@ import {
   completeAutomationRun,
   failAutomationRun,
 } from "@/lib/automation-runs";
+import { checkRateLimit, getRequestIp } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   if (!isValidAutomationSecret(req)) {
@@ -18,6 +28,15 @@ export async function POST(req: Request) {
         },
       },
       { status: 403 },
+    );
+  }
+
+  const ip = getRequestIp(req);
+  const rl = checkRateLimit(`files-upsert:${ip}`);
+  if (!rl.allowed) {
+    return Response.json(
+      { data: null, meta: {}, error: { code: "RATE_LIMITED", message: "Too many requests. Please slow down." } },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
     );
   }
 

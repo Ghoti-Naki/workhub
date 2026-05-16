@@ -5,6 +5,7 @@
  * Calendar sync). Matches by `externalId` — if a record with that ID already
  * exists it is updated in place; otherwise a new event is created. Requires
  * AUTOMATION_SECRET Bearer token. Logs every run to AutomationRun.
+ * Rate-limited to 60 requests per minute per IP.
  */
 import { prisma } from "@/lib/prisma";
 import { isValidAutomationSecret } from "@/lib/automation";
@@ -13,6 +14,7 @@ import {
   completeAutomationRun,
   failAutomationRun,
 } from "@/lib/automation-runs";
+import { checkRateLimit, getRequestIp } from "@/lib/rateLimit";
 
 export async function POST(req: Request) {
   if (!isValidAutomationSecret(req)) {
@@ -26,6 +28,15 @@ export async function POST(req: Request) {
         },
       },
       { status: 403 },
+    );
+  }
+
+  const ip = getRequestIp(req);
+  const rl = checkRateLimit(`events-upsert:${ip}`);
+  if (!rl.allowed) {
+    return Response.json(
+      { data: null, meta: {}, error: { code: "RATE_LIMITED", message: "Too many requests. Please slow down." } },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
     );
   }
 

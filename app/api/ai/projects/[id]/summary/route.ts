@@ -1,5 +1,16 @@
+/**
+ * POST /api/ai/projects/[id]/summary
+ *
+ * Generates and persists an AI summary for a single project, grounded in
+ * its tasks, notes, inbox items, and files. Falls back gracefully when no
+ * OpenAI key is configured. When DEMO_MODE=true, returns a static fixture
+ * instead of calling the API.
+ */
 import { prisma } from "@/lib/prisma";
 import { generateText } from "@/lib/ai";
+import { DEMO_PROJECT_SUMMARY } from "@/lib/ai/demoFixtures";
+
+const isDemoMode = process.env.DEMO_MODE === "true";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -66,11 +77,13 @@ Files:
 ${files.map((f) => `- ${f.name} | ${f.fileType ?? f.mimeType ?? "unknown"}`).join("\n") || "- none"}
 `;
 
-    const content = await generateText({
-      systemPrompt:
-        "You are an assistant that writes concise, grounded project summaries. Only use the provided project data. Be practical, short, and action-oriented.",
-      userPrompt: prompt,
-    });
+    const content = isDemoMode
+      ? DEMO_PROJECT_SUMMARY
+      : await generateText({
+          systemPrompt:
+            "You are an assistant that writes concise, grounded project summaries. Only use the provided project data. Be practical, short, and action-oriented.",
+          userPrompt: prompt,
+        });
 
     const output = await prisma.aiOutput.create({
       data: {

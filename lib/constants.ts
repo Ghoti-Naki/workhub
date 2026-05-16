@@ -8,6 +8,7 @@ import {
   FolderKanban,
   Home,
   Inbox,
+  BarChart2,
   Settings,
   Sparkles,
   StickyNote,
@@ -51,6 +52,8 @@ export const initialTasks: Task[] = [
     priority: "high",
     status: "in_progress",
     dueDate: "2026-04-24",
+    createdAt: "2026-04-20T00:00:00.000Z",
+    updatedAt: "2026-04-20T00:00:00.000Z",
   },
   {
     id: "t2",
@@ -59,6 +62,8 @@ export const initialTasks: Task[] = [
     priority: "high",
     status: "todo",
     dueDate: "2026-04-25",
+    createdAt: "2026-04-20T00:00:00.000Z",
+    updatedAt: "2026-04-20T00:00:00.000Z",
   },
   {
     id: "t3",
@@ -67,6 +72,8 @@ export const initialTasks: Task[] = [
     priority: "urgent",
     status: "todo",
     dueDate: "2026-04-23",
+    createdAt: "2026-04-20T00:00:00.000Z",
+    updatedAt: "2026-04-20T00:00:00.000Z",
   },
   {
     id: "t4",
@@ -75,6 +82,8 @@ export const initialTasks: Task[] = [
     priority: "high",
     status: "todo",
     dueDate: "2026-04-23",
+    createdAt: "2026-04-20T00:00:00.000Z",
+    updatedAt: "2026-04-20T00:00:00.000Z",
   },
   {
     id: "t5",
@@ -83,6 +92,8 @@ export const initialTasks: Task[] = [
     priority: "medium",
     status: "todo",
     dueDate: "2026-04-27",
+    createdAt: "2026-04-20T00:00:00.000Z",
+    updatedAt: "2026-04-20T00:00:00.000Z",
   },
 ];
 
@@ -161,6 +172,7 @@ export const navItems: NavItem[] = [
   { id: "notes", label: "Notes", icon: StickyNote },
   { id: "files", label: "Files", icon: FileText },
   { id: "copilot", label: "AI Copilot", icon: Sparkles },
+  { id: "analytics", label: "Analytics", icon: BarChart2 },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -173,5 +185,6 @@ export const subtitle: Record<PageId, string> = {
   notes: "Keep ideas, research, and meeting thinking connected to real work.",
   files: "Store the documents that matter inside project context.",
   copilot: "Use AI as a grounded assistant over your actual workspace.",
+  analytics: "Track completion trends, project health, and throughput over time.",
   settings: "Manage account preferences and external connections.",
 };

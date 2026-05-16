@@ -9,6 +9,9 @@
  */
 import { prisma } from "@/lib/prisma";
 import { generateText } from "@/lib/ai";
+import { DEMO_DAILY_BRIEF } from "@/lib/ai/demoFixtures";
+
+const isDemoMode = process.env.DEMO_MODE === "true";
 
 function startOfToday() {
   const now = new Date();
@@ -103,11 +106,13 @@ Active Projects:
 ${activeProjects.map((p) => `- ${p.title} | ${p.status} | priority: ${p.priority}`).join("\n") || "- none"}
 `;
 
-    const content = await generateText({
-      systemPrompt:
-        "You write a concise, grounded daily brief for a personal productivity workspace. Use only the provided data. Keep it practical and short.",
-      userPrompt: prompt,
-    });
+    const content = isDemoMode
+      ? DEMO_DAILY_BRIEF
+      : await generateText({
+          systemPrompt:
+            "You write a concise, grounded daily brief for a personal productivity workspace. Use only the provided data. Keep it practical and short.",
+          userPrompt: prompt,
+        });
 
     const highlights = [
       topTasks[0] ? `Top focus: ${topTasks[0].title}` : null,

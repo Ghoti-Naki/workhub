@@ -9,10 +9,11 @@ export type PageId =
   | "notes"
   | "files"
   | "copilot"
+  | "analytics"
   | "settings";
 
 export type ProjectPriority = "low" | "medium" | "high" | "urgent";
-export type ProjectStatus = "active" | "paused" | "completed" | "archived";
+export type ProjectStatus = "active" | "paused" | "completed" | "archived" | "on_hold";
 export type TaskStatus = "todo" | "in_progress" | "done" | "blocked";
 export type InboxStatus = "new" | "reviewed" | "converted" | "archived";
 export type InboxSource = "gmail" | "manual" | "calendar";
@@ -131,6 +132,8 @@ export interface AiExtraction {
   updatedAt: string;
 }
 
+export type RecurrenceInterval = "daily" | "weekly" | "monthly";
+
 export interface Task {
   id: string;
   title: string;
@@ -139,6 +142,9 @@ export interface Task {
   priority: ProjectPriority;
   status: TaskStatus;
   dueDate: string;
+  recurrence?: RecurrenceInterval | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CopilotSource {
@@ -152,6 +158,15 @@ export interface CopilotOutput extends AiOutput {
     sources?: CopilotSource[];
     [key: string]: unknown;
   } | null;
+}
+
+export interface WorkspaceSettings {
+  id: string;
+  workspaceName: string;
+  timezone: string;
+  onboardingCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AutomationRun {
@@ -175,6 +190,8 @@ export interface InboxItem {
   content: string;
   status: InboxStatus;
   suggestion: string;
+  createdAt?: string;
+  externalId?: string | null;
 }
 
 export interface Note {
@@ -190,6 +207,10 @@ export interface WorkspaceEvent {
   title: string;
   time: string;
   source: EventSource;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  description?: string | null;
+  location?: string | null;
 }
 
 export interface NavItem {
@@ -212,10 +233,12 @@ export interface SectionCardProps {
 }
 
 export interface SearchResult {
-  type: "project" | "task" | "note";
+  type: "project" | "task" | "note" | "inbox" | "file";
   id: string;
   title: string;
   subtitle: string;
+  snippet?: string;
+  score: number;
 }
 
 export interface AppHeaderProps {
@@ -226,11 +249,13 @@ export interface AppHeaderProps {
   onSearchChange: (query: string) => void;
   searchResults: SearchResult[];
   onSearchResultClick: (result: SearchResult) => void;
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 export interface SidebarProps {
   page: PageId;
-  setPage: React.Dispatch<React.SetStateAction<PageId>>;
+  setPage: (page: PageId) => void;
+  badges?: Partial<Record<PageId, number>>;
 }
 
 export interface HomePageProps {
@@ -244,13 +269,16 @@ export interface HomePageProps {
   dailyBriefError?: string | null;
   onGenerateDailyBrief: () => void;
   onCompleteTask: (taskId: string) => void;
+  onEditTask: (task: Task) => void;
   onOpenPage: (page: PageId) => void;
+  onOpenProject: (projectId: string) => void;
 }
 
 export interface InboxPageProps {
   inboxItems: InboxItem[];
   onConvertInbox: (inboxId: string, targetType: ConvertTargetType) => void;
   onArchiveInbox: (inboxId: string) => void;
+  onDeleteInbox: (inboxId: string) => Promise<void>;
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
@@ -260,6 +288,7 @@ export interface ProjectsPageProps {
   projects: Project[];
   tasks: Task[];
   notes: Note[];
+  onDeleteProject: (id: string) => Promise<void>;
 }
 
 export interface TasksPageProps {
@@ -270,18 +299,23 @@ export interface TasksPageProps {
   loadingMore?: boolean;
   onLoadMore?: () => void;
   onCompleteTask: (taskId: string) => void;
+  onCycleStatus: (taskId: string, currentStatus: string) => void;
   onCreateTask: () => void;
   onEditTask: (task: Task) => void;
+  onDeleteTask: (taskId: string) => void | Promise<void>;
 }
 
 export interface NotesPageProps {
   notes: Note[];
   projects: Project[];
+  onDeleteNote: (noteId: string) => Promise<void>;
 }
 
 export interface CalendarPageProps {
   events: WorkspaceEvent[];
   onCreateEvent: () => void;
+  onEditEvent: (event: WorkspaceEvent) => void;
+  onDeleteEvent: (eventId: string) => Promise<void>;
 }
 
 // Utility: class name joiner
