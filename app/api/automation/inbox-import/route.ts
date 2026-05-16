@@ -67,9 +67,7 @@ export async function POST(req: Request) {
 
     if (externalId) {
       const existing = await prisma.inboxItem.findFirst({
-        where: {
-          suggestedAction: externalId,
-        },
+        where: { externalId },
       });
 
       if (existing) {
@@ -90,7 +88,7 @@ export async function POST(req: Request) {
             content,
             sourceType,
             itemType,
-            suggestedAction: externalId,
+            externalId,
             status: "new",
           },
         });

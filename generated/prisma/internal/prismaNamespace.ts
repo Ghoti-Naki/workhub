@@ -1261,6 +1261,7 @@ export const InboxItemScalarFieldEnum = {
   status: 'status',
   suggestedAction: 'suggestedAction',
   suggestedDueDate: 'suggestedDueDate',
+  externalId: 'externalId',
   projectId: 'projectId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
