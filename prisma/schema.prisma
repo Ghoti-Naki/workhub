@@ -69,6 +69,7 @@ model InboxItem {
   status           String    @default("new")
   suggestedAction  String?
   suggestedDueDate DateTime?
+  externalId       String?
   projectId        String?
   project          Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   createdAt        DateTime  @default(now())

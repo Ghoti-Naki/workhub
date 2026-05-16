@@ -33,6 +33,7 @@ export type InboxItemMinAggregateOutputType = {
   status: string | null
   suggestedAction: string | null
   suggestedDueDate: Date | null
+  externalId: string | null
   projectId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -47,6 +48,7 @@ export type InboxItemMaxAggregateOutputType = {
   status: string | null
   suggestedAction: string | null
   suggestedDueDate: Date | null
+  externalId: string | null
   projectId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -61,6 +63,7 @@ export type InboxItemCountAggregateOutputType = {
   status: number
   suggestedAction: number
   suggestedDueDate: number
+  externalId: number
   projectId: number
   createdAt: number
   updatedAt: number
@@ -77,6 +80,7 @@ export type InboxItemMinAggregateInputType = {
   status?: true
   suggestedAction?: true
   suggestedDueDate?: true
+  externalId?: true
   projectId?: true
   createdAt?: true
   updatedAt?: true
@@ -91,6 +95,7 @@ export type InboxItemMaxAggregateInputType = {
   status?: true
   suggestedAction?: true
   suggestedDueDate?: true
+  externalId?: true
   projectId?: true
   createdAt?: true
   updatedAt?: true
@@ -105,6 +110,7 @@ export type InboxItemCountAggregateInputType = {
   status?: true
   suggestedAction?: true
   suggestedDueDate?: true
+  externalId?: true
   projectId?: true
   createdAt?: true
   updatedAt?: true
@@ -192,6 +198,7 @@ export type InboxItemGroupByOutputType = {
   status: string
   suggestedAction: string | null
   suggestedDueDate: Date | null
+  externalId: string | null
   projectId: string | null
   createdAt: Date
   updatedAt: Date
@@ -227,6 +234,7 @@ export type InboxItemWhereInput = {
   status?: Prisma.StringFilter<"InboxItem"> | string
   suggestedAction?: Prisma.StringNullableFilter<"InboxItem"> | string | null
   suggestedDueDate?: Prisma.DateTimeNullableFilter<"InboxItem"> | Date | string | null
+  externalId?: Prisma.StringNullableFilter<"InboxItem"> | string | null
   projectId?: Prisma.StringNullableFilter<"InboxItem"> | string | null
   createdAt?: Prisma.DateTimeFilter<"InboxItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"InboxItem"> | Date | string
@@ -242,6 +250,7 @@ export type InboxItemOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   suggestedAction?: Prisma.SortOrderInput | Prisma.SortOrder
   suggestedDueDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  externalId?: Prisma.SortOrderInput | Prisma.SortOrder
   projectId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -260,6 +269,7 @@ export type InboxItemWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.StringFilter<"InboxItem"> | string
   suggestedAction?: Prisma.StringNullableFilter<"InboxItem"> | string | null
   suggestedDueDate?: Prisma.DateTimeNullableFilter<"InboxItem"> | Date | string | null
+  externalId?: Prisma.StringNullableFilter<"InboxItem"> | string | null
   projectId?: Prisma.StringNullableFilter<"InboxItem"> | string | null
   createdAt?: Prisma.DateTimeFilter<"InboxItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"InboxItem"> | Date | string
@@ -275,6 +285,7 @@ export type InboxItemOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   suggestedAction?: Prisma.SortOrderInput | Prisma.SortOrder
   suggestedDueDate?: Prisma.SortOrderInput | Prisma.SortOrder
+  externalId?: Prisma.SortOrderInput | Prisma.SortOrder
   projectId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -295,6 +306,7 @@ export type InboxItemScalarWhereWithAggregatesInput = {
   status?: Prisma.StringWithAggregatesFilter<"InboxItem"> | string
   suggestedAction?: Prisma.StringNullableWithAggregatesFilter<"InboxItem"> | string | null
   suggestedDueDate?: Prisma.DateTimeNullableWithAggregatesFilter<"InboxItem"> | Date | string | null
+  externalId?: Prisma.StringNullableWithAggregatesFilter<"InboxItem"> | string | null
   projectId?: Prisma.StringNullableWithAggregatesFilter<"InboxItem"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"InboxItem"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"InboxItem"> | Date | string
@@ -309,6 +321,7 @@ export type InboxItemCreateInput = {
   status?: string
   suggestedAction?: string | null
   suggestedDueDate?: Date | string | null
+  externalId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   project?: Prisma.ProjectCreateNestedOneWithoutInboxItemsInput
@@ -323,6 +336,7 @@ export type InboxItemUncheckedCreateInput = {
   status?: string
   suggestedAction?: string | null
   suggestedDueDate?: Date | string | null
+  externalId?: string | null
   projectId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -337,6 +351,7 @@ export type InboxItemUpdateInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   suggestedAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   suggestedDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   project?: Prisma.ProjectUpdateOneWithoutInboxItemsNestedInput
@@ -351,6 +366,7 @@ export type InboxItemUncheckedUpdateInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   suggestedAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   suggestedDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   projectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -365,6 +381,7 @@ export type InboxItemCreateManyInput = {
   status?: string
   suggestedAction?: string | null
   suggestedDueDate?: Date | string | null
+  externalId?: string | null
   projectId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -379,6 +396,7 @@ export type InboxItemUpdateManyMutationInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   suggestedAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   suggestedDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -392,6 +410,7 @@ export type InboxItemUncheckedUpdateManyInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   suggestedAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   suggestedDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   projectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -416,6 +435,7 @@ export type InboxItemCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   suggestedAction?: Prisma.SortOrder
   suggestedDueDate?: Prisma.SortOrder
+  externalId?: Prisma.SortOrder
   projectId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -430,6 +450,7 @@ export type InboxItemMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   suggestedAction?: Prisma.SortOrder
   suggestedDueDate?: Prisma.SortOrder
+  externalId?: Prisma.SortOrder
   projectId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -444,6 +465,7 @@ export type InboxItemMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   suggestedAction?: Prisma.SortOrder
   suggestedDueDate?: Prisma.SortOrder
+  externalId?: Prisma.SortOrder
   projectId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -500,6 +522,7 @@ export type InboxItemCreateWithoutProjectInput = {
   status?: string
   suggestedAction?: string | null
   suggestedDueDate?: Date | string | null
+  externalId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -513,6 +536,7 @@ export type InboxItemUncheckedCreateWithoutProjectInput = {
   status?: string
   suggestedAction?: string | null
   suggestedDueDate?: Date | string | null
+  externalId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -555,6 +579,7 @@ export type InboxItemScalarWhereInput = {
   status?: Prisma.StringFilter<"InboxItem"> | string
   suggestedAction?: Prisma.StringNullableFilter<"InboxItem"> | string | null
   suggestedDueDate?: Prisma.DateTimeNullableFilter<"InboxItem"> | Date | string | null
+  externalId?: Prisma.StringNullableFilter<"InboxItem"> | string | null
   projectId?: Prisma.StringNullableFilter<"InboxItem"> | string | null
   createdAt?: Prisma.DateTimeFilter<"InboxItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"InboxItem"> | Date | string
@@ -569,6 +594,7 @@ export type InboxItemCreateManyProjectInput = {
   status?: string
   suggestedAction?: string | null
   suggestedDueDate?: Date | string | null
+  externalId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -582,6 +608,7 @@ export type InboxItemUpdateWithoutProjectInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   suggestedAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   suggestedDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -595,6 +622,7 @@ export type InboxItemUncheckedUpdateWithoutProjectInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   suggestedAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   suggestedDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -608,6 +636,7 @@ export type InboxItemUncheckedUpdateManyWithoutProjectInput = {
   status?: Prisma.StringFieldUpdateOperationsInput | string
   suggestedAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   suggestedDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  externalId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -623,6 +652,7 @@ export type InboxItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   status?: boolean
   suggestedAction?: boolean
   suggestedDueDate?: boolean
+  externalId?: boolean
   projectId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -638,6 +668,7 @@ export type InboxItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   status?: boolean
   suggestedAction?: boolean
   suggestedDueDate?: boolean
+  externalId?: boolean
   projectId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -653,6 +684,7 @@ export type InboxItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   status?: boolean
   suggestedAction?: boolean
   suggestedDueDate?: boolean
+  externalId?: boolean
   projectId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -668,12 +700,13 @@ export type InboxItemSelectScalar = {
   status?: boolean
   suggestedAction?: boolean
   suggestedDueDate?: boolean
+  externalId?: boolean
   projectId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type InboxItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "sourceType" | "itemType" | "status" | "suggestedAction" | "suggestedDueDate" | "projectId" | "createdAt" | "updatedAt", ExtArgs["result"]["inboxItem"]>
+export type InboxItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "content" | "sourceType" | "itemType" | "status" | "suggestedAction" | "suggestedDueDate" | "externalId" | "projectId" | "createdAt" | "updatedAt", ExtArgs["result"]["inboxItem"]>
 export type InboxItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   project?: boolean | Prisma.InboxItem$projectArgs<ExtArgs>
 }
@@ -698,6 +731,7 @@ export type $InboxItemPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     status: string
     suggestedAction: string | null
     suggestedDueDate: Date | null
+    externalId: string | null
     projectId: string | null
     createdAt: Date
     updatedAt: Date
@@ -1133,6 +1167,7 @@ export interface InboxItemFieldRefs {
   readonly status: Prisma.FieldRef<"InboxItem", 'String'>
   readonly suggestedAction: Prisma.FieldRef<"InboxItem", 'String'>
   readonly suggestedDueDate: Prisma.FieldRef<"InboxItem", 'DateTime'>
+  readonly externalId: Prisma.FieldRef<"InboxItem", 'String'>
   readonly projectId: Prisma.FieldRef<"InboxItem", 'String'>
   readonly createdAt: Prisma.FieldRef<"InboxItem", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"InboxItem", 'DateTime'>
