@@ -1,18 +1,33 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { CheckCircle2 } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { CheckCircle2, CheckSquare } from "lucide-react";
 import { Badge } from "@/components/shared/Badge";
 import { SectionCard } from "@/components/shared/SectionCard";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { FilterBar } from "@/components/shared/FilterBar";
 import type { TasksPageProps } from "@/lib/types";
 
 export function TasksPage({ tasks, projects, onCompleteTask, onCreateTask, onEditTask }: TasksPageProps) {
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+
   const projectMap = useMemo<Record<string, string>>(
     () =>
       Object.fromEntries(
         projects.map((project) => [project.id, project.title]),
       ),
     [projects],
+  );
+
+  const filtered = useMemo(
+    () =>
+      tasks.filter((task) => {
+        const matchStatus = statusFilter === "all" || task.status === statusFilter;
+        const matchPriority = priorityFilter === "all" || task.priority === priorityFilter;
+        return matchStatus && matchPriority;
+      }),
+    [tasks, statusFilter, priorityFilter],
   );
 
   return (
@@ -29,12 +44,51 @@ export function TasksPage({ tasks, projects, onCompleteTask, onCreateTask, onEdi
       }
     >
       <div className="space-y-3">
-        {tasks.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
-            No tasks yet. Create one to get started.
+        <FilterBar
+          resultCount={filtered.length}
+          totalCount={tasks.length}
+          filters={[
+            {
+              key: "status",
+              label: "Status",
+              value: statusFilter,
+              onChange: setStatusFilter,
+              options: [
+                { value: "all", label: "All" },
+                { value: "todo", label: "To do" },
+                { value: "in_progress", label: "In progress" },
+                { value: "done", label: "Done" },
+              ],
+            },
+            {
+              key: "priority",
+              label: "Priority",
+              value: priorityFilter,
+              onChange: setPriorityFilter,
+              options: [
+                { value: "all", label: "All" },
+                { value: "urgent", label: "Urgent" },
+                { value: "high", label: "High" },
+                { value: "medium", label: "Medium" },
+                { value: "low", label: "Low" },
+              ],
+            },
+          ]}
+        />
+
+        {filtered.length === 0 && tasks.length === 0 ? (
+          <EmptyState
+            icon={CheckSquare}
+            title="No tasks yet"
+            description="Create a task to start tracking your work across projects."
+            action={{ label: "+ New Task", onClick: onCreateTask }}
+          />
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 px-6 py-8 text-center text-sm text-slate-500">
+            No tasks match the current filters.
           </div>
         ) : (
-          tasks.map((task) => (
+          filtered.map((task) => (
             <div
               key={task.id}
               className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between"
@@ -43,6 +97,7 @@ export function TasksPage({ tasks, projects, onCompleteTask, onCreateTask, onEdi
                 <button
                   onClick={() => onCompleteTask(task.id)}
                   className="mt-0.5 rounded-full border border-slate-300 p-1 text-slate-500 hover:bg-slate-100"
+                  aria-label="Mark task complete"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                 </button>

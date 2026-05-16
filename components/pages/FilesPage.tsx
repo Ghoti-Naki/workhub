@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
-import { FileText } from "lucide-react";
+import { FileText, Files } from "lucide-react";
 import { SectionCard } from "@/components/shared/SectionCard";
+import { EmptyState } from "@/components/shared/EmptyState";
 import type { FileRecord, Project } from "@/lib/types";
 
 export function FilesPage({
@@ -34,9 +35,12 @@ export function FilesPage({
       }
     >
       {files.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
-          No file records yet. Add one manually or ingest from automation.
-        </div>
+        <EmptyState
+          icon={Files}
+          title="No file records yet"
+          description="Link documents, slides, or assets manually or ingest them from automation."
+          action={{ label: "Add File Record", onClick: onCreateFile }}
+        />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {files.map((file) => (

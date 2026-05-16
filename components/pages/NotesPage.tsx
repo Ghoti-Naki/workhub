@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+import { FileText } from "lucide-react";
 import { Badge } from "@/components/shared/Badge";
 import { SectionCard } from "@/components/shared/SectionCard";
+import { EmptyState } from "@/components/shared/EmptyState";
 import type { Note, Project, AiExtraction } from "@/lib/types";
 
 export function NotesPage({
@@ -59,7 +61,12 @@ export function NotesPage({
       >
         <div className="space-y-3">
           {notes.length === 0 ? (
-            <p className="text-sm text-slate-500">No notes yet.</p>
+            <EmptyState
+              icon={FileText}
+              title="No notes yet"
+              description="Use notes for meeting notes, research, ideas, and planning."
+              action={{ label: "Create Note", onClick: onCreateNote }}
+            />
           ) : (
             notes.map((note) => (
               <button

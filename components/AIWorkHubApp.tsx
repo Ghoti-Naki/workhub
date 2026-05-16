@@ -36,7 +36,7 @@ import { TaskFormModal } from "@/components/modals/TaskFormModal";
 import { NoteFormModal } from "@/components/modals/NoteFormModal";
 import { EventFormModal } from "@/components/modals/EventFormModal";
 
-export default function AIWorkHubAppStarterV1() {
+export default function AIWorkHubApp() {
   const [page, setPage] = useState<PageId>("home");
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);

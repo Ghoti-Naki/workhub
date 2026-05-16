@@ -3,6 +3,7 @@
 import React from "react";
 import { Calendar } from "lucide-react";
 import { SectionCard } from "@/components/shared/SectionCard";
+import { EmptyState } from "@/components/shared/EmptyState";
 import type { CalendarPageProps } from "@/lib/types";
 
 export function CalendarPage({ events, onCreateEvent }: CalendarPageProps) {
@@ -21,9 +22,12 @@ export function CalendarPage({ events, onCreateEvent }: CalendarPageProps) {
     >
       <div className="space-y-3">
         {events.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
-            No events yet. Create one or sync via automation.
-          </div>
+          <EmptyState
+            icon={Calendar}
+            title="No events yet"
+            description="Add events manually or sync your Google Calendar via n8n automation."
+            action={{ label: "+ New Event", onClick: onCreateEvent }}
+          />
         ) : (
           events.map((event) => (
             <div

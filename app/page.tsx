@@ -1,5 +1,5 @@
-import AIWorkHubAppStarterV1 from "@/components/AIWorkHubAppStarterV1";
+import AIWorkHubApp from "@/components/AIWorkHubApp";
 
 export default function Page() {
-  return <AIWorkHubAppStarterV1 />;
+  return <AIWorkHubApp />;
 }

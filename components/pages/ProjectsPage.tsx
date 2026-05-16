@@ -1,8 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
+import { FolderOpen } from "lucide-react";
 import { Badge } from "@/components/shared/Badge";
+import { FilterBar } from "@/components/shared/FilterBar";
 import { SectionCard } from "@/components/shared/SectionCard";
+import { EmptyState } from "@/components/shared/EmptyState";
 import type { Project, Task, Note, ProjectContextData, AiOutput } from "@/lib/types";
 
 // ─── ProjectDetailPanel ───────────────────────────────────────────────────────
@@ -234,6 +237,14 @@ export function ProjectsPage({
   onCreateProject: () => void;
   onEditProject: (project: Project) => void;
 }) {
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const filtered = useMemo(
+    () =>
+      projects.filter((p) => statusFilter === "all" || p.status === statusFilter),
+    [projects, statusFilter],
+  );
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
       <div className="space-y-6">
@@ -248,13 +259,39 @@ export function ProjectsPage({
             + New Project
           </button>
         </div>
+        <FilterBar
+          resultCount={filtered.length}
+          totalCount={projects.length}
+          filters={[
+            {
+              key: "status",
+              label: "Status",
+              value: statusFilter,
+              onChange: setStatusFilter,
+              options: [
+                { value: "all", label: "All" },
+                { value: "active", label: "Active" },
+                { value: "completed", label: "Completed" },
+                { value: "on_hold", label: "On hold" },
+                { value: "paused", label: "Paused" },
+              ],
+            },
+          ]}
+        />
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-1">
           {projects.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
-              No projects yet. Create one to get started.
+            <EmptyState
+              icon={FolderOpen}
+              title="No projects yet"
+              description="Create your first project to start organizing tasks, notes, and files."
+              action={{ label: "+ New Project", onClick: onCreateProject }}
+            />
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 px-6 py-8 text-center text-sm text-slate-500">
+              No projects match the current filter.
             </div>
           ) : (
-          projects.map((project) => {
+          filtered.map((project) => {
             const projectTasks = tasks.filter(
               (task) => task.projectId === project.id && task.status !== "done",
             );

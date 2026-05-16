@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Inbox } from "lucide-react";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { Badge } from "@/components/shared/Badge";
 import { SectionCard } from "@/components/shared/SectionCard";
 import { cn } from "@/lib/types";
@@ -22,6 +23,13 @@ export function InboxPage({ inboxItems, onConvertInbox, onArchiveInbox }: InboxP
         className="overflow-hidden p-0"
       >
         <div className="space-y-2 p-2">
+          {inboxItems.length === 0 ? (
+            <EmptyState
+              icon={Inbox}
+              title="Inbox is clear"
+              description="Captured ideas and automation imports will appear here."
+            />
+          ) : null}
           {inboxItems.map((item) => (
             <button
               key={item.id}
