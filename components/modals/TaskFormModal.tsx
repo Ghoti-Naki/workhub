@@ -3,8 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { ModalShell } from "@/components/modals/ModalShell";
 import { cn } from "@/lib/types";
-import { inputCls, selectCls, labelCls } from "@/components/shared/styles";
+import { inputCls, inputErrorCls, selectCls, labelCls } from "@/components/shared/styles";
 import type { Task, Project, ProjectPriority, TaskStatus } from "@/lib/types";
+
+type Errors = { title?: string; saveError?: string };
 
 export function TaskFormModal({
   open,
@@ -26,7 +28,7 @@ export function TaskFormModal({
   const [status, setStatus] = useState<TaskStatus>("todo");
   const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Errors>({});
 
   useEffect(() => {
     if (open) {
@@ -36,18 +38,22 @@ export function TaskFormModal({
       setPriority(task?.priority ?? "medium");
       setStatus(task?.status ?? "todo");
       setDueDate(task?.dueDate ? task.dueDate.slice(0, 10) : "");
-      setError(null);
+      setErrors({});
     }
   }, [open, task]);
 
+  function validate(): boolean {
+    const errs: Errors = {};
+    if (!title.trim()) errs.title = "Title is required.";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) {
-      setError("Title is required.");
-      return;
-    }
+    if (!validate()) return;
     setSaving(true);
-    setError(null);
+    setErrors({});
     try {
       const url = task ? `/api/tasks/${task.id}` : "/api/tasks";
       const method = task ? "PATCH" : "POST";
@@ -67,7 +73,7 @@ export function TaskFormModal({
       onClose();
       onSaved();
     } catch {
-      setError("Failed to save task. Please try again.");
+      setErrors({ saveError: "Failed to save task. Please try again." });
     } finally {
       setSaving(false);
     }
@@ -80,10 +86,12 @@ export function TaskFormModal({
           <label className={labelCls}>Title *</label>
           <input
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className={inputCls}
+            onChange={(e) => { setTitle(e.target.value); setErrors((prev) => ({ ...prev, title: undefined })); }}
+            className={errors.title ? inputErrorCls : inputCls}
             placeholder="Task title"
+            aria-describedby={errors.title ? "title-error" : undefined}
           />
+          {errors.title ? <p id="title-error" role="alert" className="mt-1 text-xs text-rose-600">{errors.title}</p> : null}
         </div>
         <div>
           <label className={labelCls}>Description</label>
@@ -97,27 +105,17 @@ export function TaskFormModal({
         </div>
         <div>
           <label className={labelCls}>Project</label>
-          <select
-            value={projectId}
-            onChange={(e) => setProjectId(e.target.value)}
-            className={selectCls}
-          >
+          <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className={selectCls}>
             <option value="">Unassigned</option>
             {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
+              <option key={p.id} value={p.id}>{p.title}</option>
             ))}
           </select>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelCls}>Priority</label>
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as ProjectPriority)}
-              className={selectCls}
-            >
+            <select value={priority} onChange={(e) => setPriority(e.target.value as ProjectPriority)} className={selectCls}>
               <option value="low">Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
@@ -126,11 +124,7 @@ export function TaskFormModal({
           </div>
           <div>
             <label className={labelCls}>Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as TaskStatus)}
-              className={selectCls}
-            >
+            <select value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)} className={selectCls}>
               <option value="todo">To Do</option>
               <option value="in_progress">In Progress</option>
               <option value="done">Done</option>
@@ -140,27 +134,14 @@ export function TaskFormModal({
         </div>
         <div>
           <label className={labelCls}>Due Date</label>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className={inputCls}
-          />
+          <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
         </div>
-        {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+        {errors.saveError ? <p role="alert" className="text-sm text-rose-600">{errors.saveError}</p> : null}
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
-          >
+          <button type="button" onClick={onClose} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-          >
+          <button type="submit" disabled={saving} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
             {saving ? "Saving..." : task ? "Save Changes" : "Create Task"}
           </button>
         </div>

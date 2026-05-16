@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { ModalShell } from "@/components/modals/ModalShell";
-import { inputCls, selectCls, labelCls } from "@/components/shared/styles";
+import { inputCls, inputErrorCls, selectCls, labelCls } from "@/components/shared/styles";
 import type { Project, ProjectPriority, ProjectStatus } from "@/lib/types";
+
+type Errors = { title?: string; saveError?: string };
 
 export function ProjectFormModal({
   open,
@@ -22,7 +24,7 @@ export function ProjectFormModal({
   const [status, setStatus] = useState<ProjectStatus>("active");
   const [dueDate, setDueDate] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Errors>({});
 
   useEffect(() => {
     if (open) {
@@ -31,18 +33,22 @@ export function ProjectFormModal({
       setPriority(project?.priority ?? "medium");
       setStatus(project?.status ?? "active");
       setDueDate(project?.dueDate ? project.dueDate.slice(0, 10) : "");
-      setError(null);
+      setErrors({});
     }
   }, [open, project]);
 
+  function validate(): boolean {
+    const errs: Errors = {};
+    if (!title.trim()) errs.title = "Title is required.";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) {
-      setError("Title is required.");
-      return;
-    }
+    if (!validate()) return;
     setSaving(true);
-    setError(null);
+    setErrors({});
     try {
       const url = project ? `/api/projects/${project.id}` : "/api/projects";
       const method = project ? "PATCH" : "POST";
@@ -61,7 +67,7 @@ export function ProjectFormModal({
       onClose();
       onSaved();
     } catch {
-      setError("Failed to save project. Please try again.");
+      setErrors({ saveError: "Failed to save project. Please try again." });
     } finally {
       setSaving(false);
     }
@@ -74,10 +80,12 @@ export function ProjectFormModal({
           <label className={labelCls}>Title *</label>
           <input
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className={inputCls}
+            onChange={(e) => { setTitle(e.target.value); setErrors((prev) => ({ ...prev, title: undefined })); }}
+            className={errors.title ? inputErrorCls : inputCls}
             placeholder="Project title"
+            aria-describedby={errors.title ? "title-error" : undefined}
           />
+          {errors.title ? <p id="title-error" role="alert" className="mt-1 text-xs text-rose-600">{errors.title}</p> : null}
         </div>
         <div>
           <label className={labelCls}>Goal</label>
@@ -91,11 +99,7 @@ export function ProjectFormModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelCls}>Priority</label>
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as ProjectPriority)}
-              className={selectCls}
-            >
+            <select value={priority} onChange={(e) => setPriority(e.target.value as ProjectPriority)} className={selectCls}>
               <option value="low">Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
@@ -104,11 +108,7 @@ export function ProjectFormModal({
           </div>
           <div>
             <label className={labelCls}>Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as ProjectStatus)}
-              className={selectCls}
-            >
+            <select value={status} onChange={(e) => setStatus(e.target.value as ProjectStatus)} className={selectCls}>
               <option value="active">Active</option>
               <option value="paused">Paused</option>
               <option value="completed">Completed</option>
@@ -118,27 +118,14 @@ export function ProjectFormModal({
         </div>
         <div>
           <label className={labelCls}>Due Date</label>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className={inputCls}
-          />
+          <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
         </div>
-        {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+        {errors.saveError ? <p role="alert" className="text-sm text-rose-600">{errors.saveError}</p> : null}
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
-          >
+          <button type="button" onClick={onClose} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-          >
+          <button type="submit" disabled={saving} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
             {saving ? "Saving..." : project ? "Save Changes" : "Create Project"}
           </button>
         </div>

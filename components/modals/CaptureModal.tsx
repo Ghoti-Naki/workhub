@@ -3,8 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { ModalShell } from "@/components/modals/ModalShell";
 import { cn } from "@/lib/types";
-import { inputCls, labelCls } from "@/components/shared/styles";
+import { inputCls, inputErrorCls, labelCls } from "@/components/shared/styles";
 import type { Project } from "@/lib/types";
+
+type Errors = { content?: string; saveError?: string };
 
 export function CaptureModal({
   open,
@@ -20,24 +22,28 @@ export function CaptureModal({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Errors>({});
 
   useEffect(() => {
     if (open) {
       setTitle("");
       setContent("");
-      setError(null);
+      setErrors({});
     }
   }, [open]);
 
+  function validate(): boolean {
+    const errs: Errors = {};
+    if (!content.trim()) errs.content = "Content is required.";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!content.trim()) {
-      setError("Content is required.");
-      return;
-    }
+    if (!validate()) return;
     setSaving(true);
-    setError(null);
+    setErrors({});
     try {
       const res = await fetch("/api/inbox", {
         method: "POST",
@@ -53,7 +59,7 @@ export function CaptureModal({
       onClose();
       onSaved();
     } catch {
-      setError("Failed to save. Please try again.");
+      setErrors({ saveError: "Failed to save. Please try again." });
     } finally {
       setSaving(false);
     }
@@ -78,26 +84,20 @@ export function CaptureModal({
           <label className={labelCls}>Content *</label>
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => { setContent(e.target.value); setErrors((prev) => ({ ...prev, content: undefined })); }}
             rows={3}
-            className={cn(inputCls, "resize-none")}
+            className={cn(errors.content ? inputErrorCls : inputCls, "resize-none")}
             placeholder="What's on your mind?"
+            aria-describedby={errors.content ? "content-error" : undefined}
           />
+          {errors.content ? <p id="content-error" role="alert" className="mt-1 text-xs text-rose-600">{errors.content}</p> : null}
         </div>
-        {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+        {errors.saveError ? <p role="alert" className="text-sm text-rose-600">{errors.saveError}</p> : null}
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
-          >
+          <button type="button" onClick={onClose} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-          >
+          <button type="submit" disabled={saving} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
             {saving ? "Saving..." : "Capture"}
           </button>
         </div>
