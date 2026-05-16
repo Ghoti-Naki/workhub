@@ -62,7 +62,7 @@ npm install
 Create `.env` in the project root:
 
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/workhub
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:1101/workhub
 OPENAI_API_KEY=
 AUTOMATION_SECRET=replace-with-a-long-random-secret
 ```
