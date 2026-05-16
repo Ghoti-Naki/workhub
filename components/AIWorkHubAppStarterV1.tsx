@@ -257,6 +257,7 @@ interface HomePageProps {
 interface InboxPageProps {
   inboxItems: InboxItem[];
   onConvertInbox: (inboxId: string, targetType: ConvertTargetType) => void;
+  onArchiveInbox: (inboxId: string) => void;
 }
 
 interface ProjectsPageProps {
@@ -839,7 +840,7 @@ function HomePage({
   );
 }
 
-function InboxPage({ inboxItems, onConvertInbox }: InboxPageProps) {
+function InboxPage({ inboxItems, onConvertInbox, onArchiveInbox }: InboxPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(
     inboxItems[0]?.id ?? null,
   );
@@ -919,7 +920,10 @@ function InboxPage({ inboxItems, onConvertInbox }: InboxPageProps) {
               >
                 Convert to Note
               </button>
-              <button className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700">
+              <button
+                onClick={() => onArchiveInbox(selectedItem.id)}
+                className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700"
+              >
                 Archive
               </button>
             </div>
@@ -2218,6 +2222,26 @@ export default function AIWorkHubAppStarterV1() {
     }
   }
 
+  async function handleArchiveInbox(inboxId: string) {
+    try {
+      const response = await fetch(`/api/inbox/${inboxId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "archived" }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to archive inbox item.");
+      }
+
+      await loadWorkspaceData();
+    } catch (error) {
+      console.error("Failed to archive inbox item", error);
+    }
+  }
+
   async function loadProjectContext(projectId: string) {
     try {
       setLoadingProjectContext(true);
@@ -2480,6 +2504,7 @@ export default function AIWorkHubAppStarterV1() {
           <InboxPage
             inboxItems={inboxItems}
             onConvertInbox={handleConvertInbox}
+            onArchiveInbox={handleArchiveInbox}
           />
         );
       case "projects":
@@ -2574,39 +2599,6 @@ export default function AIWorkHubAppStarterV1() {
             subtitle={subtitle[page]}
             onQuickAdd={() => setPage("inbox")}
           />
-
-          <div className="flex flex-wrap gap-4 border-b border-slate-200 bg-white px-6 py-3">
-            <button
-              onClick={handleCreateProject}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
-            >
-              + Test Create Project
-            </button>
-            <button
-              onClick={handleCreateTask}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-              + Test Create Task
-            </button>
-            <button
-              onClick={handleCreateNote}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-              + Test Create Note
-            </button>
-            <button
-              onClick={handleCreateInboxItem}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-              + Test Create Inbox
-            </button>
-            <button
-              onClick={handleCreateFile}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-              + Test Create File
-            </button>
-          </div>
 
           <div className="border-b border-slate-200 bg-white px-6 py-4">
             <div className="grid gap-3 sm:grid-cols-3 xl:max-w-3xl">
