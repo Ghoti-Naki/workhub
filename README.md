@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Work Hub
 
-## Getting Started
+AI Work Hub is a single-user AI-assisted productivity workspace built with Next.js, TypeScript, Prisma, and PostgreSQL.
 
-First, run the development server:
+It centralizes projects, tasks, notes, inbox items, calendar events, file records, AI summaries, AI task extraction, and external automation imports through n8n.
+
+---
+
+## Current Status
+
+This repository is not just a concept document. It already contains a working application foundation with:
+
+- Next.js App Router frontend/backend
+- Prisma + PostgreSQL data layer
+- Dashboard aggregation
+- Projects, tasks, notes, inbox, events, and file APIs
+- AI daily brief
+- AI project summaries
+- AI note-to-task extraction
+- AI Copilot
+- n8n webhook ingestion routes
+- Automation run logs
+
+However, some important pieces are still incomplete:
+
+- no authentication
+- no `.env.example`
+- debug buttons still visible in UI
+- Quick Capture is not a real modal yet
+- Search bar is not functional yet
+- create/edit forms are still stub-like in places
+- `AIWorkHubAppStarterV1.tsx` is a large monolithic component
+- no automated tests
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js App Router |
+| Language | TypeScript |
+| UI | React |
+| Styling | Tailwind CSS |
+| ORM | Prisma |
+| Database | PostgreSQL |
+| AI | OpenAI API, optional fallback |
+| Automation | n8n webhooks |
+
+---
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Create `.env`
+
+Create `.env` in the project root:
+
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/workhub
+OPENAI_API_KEY=
+AUTOMATION_SECRET=replace-with-a-long-random-secret
+```
+
+### 3. Run migrations
+
+```bash
+npx prisma migrate dev
+```
+
+### 4. Start development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```txt
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Commands
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run dev
+npm run build
+npm start
+npm run lint
+npx prisma generate
+npx prisma migrate dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Important Files
 
-## Deploy on Vercel
+| File | Purpose |
+|---|---|
+| `PROJECT_CONTEXT.md` | Main repository context. Read first. |
+| `CLAUDE.md` | Claude Code operating instructions. |
+| `TASK_LIST.md` | Development checklist and known issues. |
+| `components/AIWorkHubAppStarterV1.tsx` | Current frontend app. |
+| `app/api/**/route.ts` | API routes. |
+| `lib/prisma.ts` | Prisma singleton. |
+| `lib/ai.ts` | OpenAI/fallback generation helper. |
+| `lib/ai-task-extraction.ts` | Note-to-task extraction helper. |
+| `prisma/schema.prisma` | Database schema source of truth. |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Development Priority
+
+Start here:
+
+1. Remove debug test buttons.
+2. Add `.env.example`.
+3. Fix `.gitignore` for `generated/prisma/`.
+4. Wire Inbox Archive button.
+5. Build Quick Capture modal.
+6. Replace placeholder create/edit handlers with real forms.
+7. Make Search functional.
+8. Add authentication before public deployment.
+
+See `TASK_LIST.md` for the full checklist.
+
+---
+
+## Safety Notes
+
+Do not deploy publicly without authentication.
+
+Do not commit `.env`.
+
+Do not remove OpenAI fallback logic.
+
+Do not rewrite the app from scratch.
+
+Do not change the Prisma schema without a migration plan.
+
+Do not replace n8n with direct OAuth unless explicitly planned.
