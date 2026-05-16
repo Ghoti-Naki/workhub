@@ -1,11 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { LogOut } from "lucide-react";
 import { Badge } from "@/components/shared/Badge";
 import { SectionCard } from "@/components/shared/SectionCard";
 import type { AutomationRun } from "@/lib/types";
 
 export function SettingsPage({ automationRuns }: { automationRuns: AutomationRun[] }) {
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      window.location.href = "/login";
+    }
+  }
+
   const integrations = [
     { name: "Google Calendar", status: "Automation-ready" },
     { name: "Gmail", status: "Automation-ready" },
@@ -28,6 +40,14 @@ export function SettingsPage({ automationRuns }: { automationRuns: AutomationRun
               <p className="text-slate-500">Timezone</p>
               <p className="mt-1 font-medium text-slate-900">Asia/Jakarta</p>
             </div>
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+            >
+              <LogOut className="h-4 w-4" />
+              {loggingOut ? "Signing out…" : "Sign out"}
+            </button>
           </div>
         </SectionCard>
 
