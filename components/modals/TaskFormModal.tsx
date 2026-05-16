@@ -73,10 +73,8 @@ export function TaskFormModal({
     }
   }
 
-  if (!open) return null;
-
   return (
-    <ModalShell title={task ? "Edit Task" : "New Task"} onClose={onClose}>
+    <ModalShell title={task ? "Edit Task" : "New Task"} open={open} onClose={onClose}>
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>
           <label className={labelCls}>Title *</label>

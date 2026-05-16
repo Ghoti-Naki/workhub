@@ -67,10 +67,8 @@ export function ProjectFormModal({
     }
   }
 
-  if (!open) return null;
-
   return (
-    <ModalShell title={project ? "Edit Project" : "New Project"} onClose={onClose}>
+    <ModalShell title={project ? "Edit Project" : "New Project"} open={open} onClose={onClose}>
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>
           <label className={labelCls}>Title *</label>

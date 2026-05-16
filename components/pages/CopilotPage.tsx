@@ -3,6 +3,7 @@
 import React from "react";
 import { Sparkles } from "lucide-react";
 import { SectionCard } from "@/components/shared/SectionCard";
+import { AIErrorCallout } from "@/components/shared/AIErrorCallout";
 import type { CopilotOutput, CopilotSource } from "@/lib/types";
 
 export function CopilotPage({
@@ -10,12 +11,14 @@ export function CopilotPage({
   setPrompt,
   history,
   loading,
+  error,
   onSubmit,
 }: {
   prompt: string;
   setPrompt: (value: string) => void;
   history: CopilotOutput[];
   loading: boolean;
+  error?: string | null;
   onSubmit: (promptText?: string) => void;
 }) {
   const latestAnswer = history[0] ?? null;
@@ -56,6 +59,8 @@ export function CopilotPage({
                 </button>
               </div>
             </div>
+
+            <AIErrorCallout message={error} />
 
             {latestAnswer ? (
               <div className="space-y-4">

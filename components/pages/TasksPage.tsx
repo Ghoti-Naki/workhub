@@ -6,9 +6,10 @@ import { Badge } from "@/components/shared/Badge";
 import { SectionCard } from "@/components/shared/SectionCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { FilterBar } from "@/components/shared/FilterBar";
+import { SkeletonRow } from "@/components/shared/Skeleton";
 import type { TasksPageProps } from "@/lib/types";
 
-export function TasksPage({ tasks, projects, onCompleteTask, onCreateTask, onEditTask }: TasksPageProps) {
+export function TasksPage({ tasks, projects, loading, onCompleteTask, onCreateTask, onEditTask }: TasksPageProps) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
 
@@ -44,37 +45,41 @@ export function TasksPage({ tasks, projects, onCompleteTask, onCreateTask, onEdi
       }
     >
       <div className="space-y-3">
-        <FilterBar
-          resultCount={filtered.length}
-          totalCount={tasks.length}
-          filters={[
-            {
-              key: "status",
-              label: "Status",
-              value: statusFilter,
-              onChange: setStatusFilter,
-              options: [
-                { value: "all", label: "All" },
-                { value: "todo", label: "To do" },
-                { value: "in_progress", label: "In progress" },
-                { value: "done", label: "Done" },
-              ],
-            },
-            {
-              key: "priority",
-              label: "Priority",
-              value: priorityFilter,
-              onChange: setPriorityFilter,
-              options: [
-                { value: "all", label: "All" },
-                { value: "urgent", label: "Urgent" },
-                { value: "high", label: "High" },
-                { value: "medium", label: "Medium" },
-                { value: "low", label: "Low" },
-              ],
-            },
-          ]}
-        />
+        {loading ? (
+          [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
+        ) : (
+          <>
+            <FilterBar
+              resultCount={filtered.length}
+              totalCount={tasks.length}
+              filters={[
+                {
+                  key: "status",
+                  label: "Status",
+                  value: statusFilter,
+                  onChange: setStatusFilter,
+                  options: [
+                    { value: "all", label: "All" },
+                    { value: "todo", label: "To do" },
+                    { value: "in_progress", label: "In progress" },
+                    { value: "done", label: "Done" },
+                  ],
+                },
+                {
+                  key: "priority",
+                  label: "Priority",
+                  value: priorityFilter,
+                  onChange: setPriorityFilter,
+                  options: [
+                    { value: "all", label: "All" },
+                    { value: "urgent", label: "Urgent" },
+                    { value: "high", label: "High" },
+                    { value: "medium", label: "Medium" },
+                    { value: "low", label: "Low" },
+                  ],
+                },
+              ]}
+            />
 
         {filtered.length === 0 && tasks.length === 0 ? (
           <EmptyState
@@ -99,7 +104,7 @@ export function TasksPage({ tasks, projects, onCompleteTask, onCreateTask, onEdi
                   className="mt-0.5 rounded-full border border-slate-300 p-1 text-slate-500 hover:bg-slate-100"
                   aria-label="Mark task complete"
                 >
-                  <CheckCircle2 className="h-4 w-4" />
+                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                 </button>
                 <div>
                   <p className="font-medium text-slate-900">{task.title}</p>
@@ -136,6 +141,8 @@ export function TasksPage({ tasks, projects, onCompleteTask, onCreateTask, onEdi
               </div>
             </div>
           ))
+        )}
+          </>
         )}
       </div>
     </SectionCard>

@@ -64,10 +64,8 @@ export function NoteFormModal({
     }
   }
 
-  if (!open) return null;
-
   return (
-    <ModalShell title={note ? "Edit Note" : "New Note"} onClose={onClose}>
+    <ModalShell title={note ? "Edit Note" : "New Note"} open={open} onClose={onClose}>
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>
           <label className={labelCls}>Title *</label>

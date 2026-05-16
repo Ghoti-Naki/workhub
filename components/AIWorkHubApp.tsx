@@ -35,6 +35,8 @@ import { ProjectFormModal } from "@/components/modals/ProjectFormModal";
 import { TaskFormModal } from "@/components/modals/TaskFormModal";
 import { NoteFormModal } from "@/components/modals/NoteFormModal";
 import { EventFormModal } from "@/components/modals/EventFormModal";
+import { SkeletonStat } from "@/components/shared/Skeleton";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 
 export default function AIWorkHubApp() {
   const [page, setPage] = useState<PageId>("home");
@@ -55,6 +57,7 @@ export default function AIWorkHubApp() {
   const [loadingProjectContext, setLoadingProjectContext] = useState(false);
   const [dailyBrief, setDailyBrief] = useState<AiOutput | null>(null);
   const [loadingDailyBrief, setLoadingDailyBrief] = useState(false);
+  const [dailyBriefError, setDailyBriefError] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [noteExtraction, setNoteExtraction] = useState<AiExtraction | null>(
     null,
@@ -68,6 +71,7 @@ export default function AIWorkHubApp() {
   const [copilotPrompt, setCopilotPrompt] = useState("");
   const [copilotHistory, setCopilotHistory] = useState<CopilotOutput[]>([]);
   const [loadingCopilot, setLoadingCopilot] = useState(false);
+  const [copilotError, setCopilotError] = useState<string | null>(null);
   const [automationRuns, setAutomationRuns] = useState<AutomationRun[]>([]);
 
   // Modal state
@@ -528,18 +532,22 @@ export default function AIWorkHubApp() {
   async function handleGenerateDailyBrief() {
     try {
       setLoadingDailyBrief(true);
+      setDailyBriefError(null);
 
-      const response = await fetch("/api/ai/daily-brief", {
-        method: "POST",
-      });
+      const response = await fetch("/api/ai/daily-brief", { method: "POST" });
+      const json = await response.json();
 
-      if (!response.ok) {
-        throw new Error("Failed to generate daily brief.");
+      if (!response.ok || json.error) {
+        const msg = json.error?.code === "AI_NOT_CONFIGURED"
+          ? "AI is not configured. Add OPENAI_API_KEY to your .env file to enable this feature."
+          : "Failed to generate the daily brief. Please try again.";
+        setDailyBriefError(msg);
+        return;
       }
 
       await loadWorkspaceData();
-    } catch (error) {
-      console.error("Failed to generate daily brief", error);
+    } catch {
+      setDailyBriefError("Failed to generate the daily brief. Please try again.");
     } finally {
       setLoadingDailyBrief(false);
     }
@@ -609,32 +617,32 @@ export default function AIWorkHubApp() {
 
     try {
       setLoadingCopilot(true);
+      setCopilotError(null);
 
       const response = await fetch("/api/ai/copilot", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt: finalPrompt,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: finalPrompt }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to generate copilot answer.");
+      const json: ApiResponse<CopilotOutput> = await response.json();
+
+      if (!response.ok || json.error) {
+        const msg = json.error?.code === "AI_NOT_CONFIGURED"
+          ? "AI Copilot is not configured. Add OPENAI_API_KEY to your .env file to enable this feature."
+          : "Failed to get a Copilot answer. Please try again.";
+        setCopilotError(msg);
+        return;
       }
 
-      const json: ApiResponse<CopilotOutput> = await response.json();
-      const output = json.data;
-
-      if (output) {
+      if (json.data) {
         await loadCopilotHistory();
       }
 
       setCopilotPrompt("");
       setPage("copilot");
-    } catch (error) {
-      console.error("Failed to ask copilot", error);
+    } catch {
+      setCopilotError("Failed to get a Copilot answer. Please try again.");
     } finally {
       setLoadingCopilot(false);
     }
@@ -720,6 +728,7 @@ export default function AIWorkHubApp() {
             dashboard={dashboard}
             dailyBrief={dailyBrief}
             loadingDailyBrief={loadingDailyBrief}
+            dailyBriefError={dailyBriefError}
             onGenerateDailyBrief={handleGenerateDailyBrief}
             onCompleteTask={handleCompleteTask}
             onOpenPage={setPage}
@@ -752,6 +761,7 @@ export default function AIWorkHubApp() {
           <TasksPage
             tasks={tasks}
             projects={projects}
+            loading={loadingData}
             onCompleteTask={handleCompleteTask}
             onCreateTask={handleOpenCreateTask}
             onEditTask={handleOpenEditTask}
@@ -794,6 +804,7 @@ export default function AIWorkHubApp() {
             setPrompt={setCopilotPrompt}
             history={copilotHistory}
             loading={loadingCopilot}
+            error={copilotError}
             onSubmit={handleAskCopilot}
           />
         );
@@ -809,6 +820,7 @@ export default function AIWorkHubApp() {
             dashboard={dashboard}
             dailyBrief={dailyBrief}
             loadingDailyBrief={loadingDailyBrief}
+            dailyBriefError={dailyBriefError}
             onGenerateDailyBrief={handleGenerateDailyBrief}
             onCompleteTask={handleCompleteTask}
             onOpenPage={setPage}
@@ -837,34 +849,34 @@ export default function AIWorkHubApp() {
 
           <div className="border-b border-slate-200 bg-white px-6 py-4">
             <div className="grid gap-3 sm:grid-cols-3 xl:max-w-3xl">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-slate-500">
-                  Open Tasks
-                </p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {stats.openTasks}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-slate-500">
-                  Active Projects
-                </p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {stats.activeProjects}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-wide text-slate-500">
-                  New Inbox
-                </p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  {stats.newInbox}
-                </p>
-              </div>
+              {loadingData ? (
+                <>
+                  <SkeletonStat />
+                  <SkeletonStat />
+                  <SkeletonStat />
+                </>
+              ) : (
+                <>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Open Tasks</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">{stats.openTasks}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Active Projects</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">{stats.activeProjects}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">New Inbox</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">{stats.newInbox}</p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
-          <div className="flex-1 px-6 py-6">{renderPage()}</div>
+          <div className="flex-1 px-6 py-6">
+            <ErrorBoundary key={page}>{renderPage()}</ErrorBoundary>
+          </div>
         </main>
       </div>
 

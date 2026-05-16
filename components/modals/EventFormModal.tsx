@@ -72,10 +72,8 @@ export function EventFormModal({
     }
   }
 
-  if (!open) return null;
-
   return (
-    <ModalShell title="New Event" onClose={onClose}>
+    <ModalShell title="New Event" open={open} onClose={onClose}>
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>
           <label className={labelCls}>Title *</label>

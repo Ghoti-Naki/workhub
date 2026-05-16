@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { FolderOpen } from "lucide-react";
+import { SkeletonCard } from "@/components/shared/Skeleton";
 import { Badge } from "@/components/shared/Badge";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { SectionCard } from "@/components/shared/SectionCard";
@@ -22,7 +23,10 @@ function ProjectDetailPanel({
   if (loading) {
     return (
       <SectionCard title="Project Detail" subtitle="Loading project context">
-        <p className="text-sm text-slate-500">Loading project details...</p>
+        <div className="space-y-3">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       </SectionCard>
     );
   }

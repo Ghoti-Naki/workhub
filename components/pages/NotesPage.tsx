@@ -2,6 +2,7 @@
 
 import React from "react";
 import { FileText } from "lucide-react";
+import { SkeletonRow } from "@/components/shared/Skeleton";
 import { Badge } from "@/components/shared/Badge";
 import { SectionCard } from "@/components/shared/SectionCard";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -150,7 +151,11 @@ export function NotesPage({
           }
         >
           {loadingExtraction ? (
-            <p className="text-sm text-slate-500">Loading extraction...</p>
+            <div className="space-y-2">
+              <SkeletonRow />
+              <SkeletonRow />
+              <SkeletonRow />
+            </div>
           ) : !noteExtraction ? (
             <p className="text-sm text-slate-500">
               No extraction yet. Select a note and run Extract Tasks.

@@ -59,10 +59,8 @@ export function CaptureModal({
     }
   }
 
-  if (!open) return null;
-
   return (
-    <ModalShell title="Quick Capture" onClose={onClose}>
+    <ModalShell title="Quick Capture" open={open} onClose={onClose}>
       <p className="mt-1 text-sm text-slate-500">Add anything to your inbox instantly.</p>
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>

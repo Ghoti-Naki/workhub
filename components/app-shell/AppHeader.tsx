@@ -28,11 +28,12 @@ export function AppHeader({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative">
           <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm shadow-sm">
-            <Search className="h-4 w-4 shrink-0 text-slate-400" />
+            <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
             <input
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search workspace"
+              aria-label="Search workspace"
               className="min-w-0 w-48 bg-transparent text-slate-700 outline-none placeholder:text-slate-400"
             />
           </div>
@@ -61,7 +62,7 @@ export function AppHeader({
           onClick={onQuickAdd}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4" aria-hidden="true" />
           Quick Capture
         </button>
       </div>

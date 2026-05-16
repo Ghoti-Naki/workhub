@@ -241,6 +241,7 @@ export interface HomePageProps {
   dashboard: DashboardData | null;
   dailyBrief: AiOutput | null;
   loadingDailyBrief: boolean;
+  dailyBriefError?: string | null;
   onGenerateDailyBrief: () => void;
   onCompleteTask: (taskId: string) => void;
   onOpenPage: (page: PageId) => void;
@@ -261,6 +262,7 @@ export interface ProjectsPageProps {
 export interface TasksPageProps {
   tasks: Task[];
   projects: Project[];
+  loading?: boolean;
   onCompleteTask: (taskId: string) => void;
   onCreateTask: () => void;
   onEditTask: (task: Task) => void;

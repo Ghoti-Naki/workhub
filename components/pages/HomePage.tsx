@@ -4,6 +4,7 @@ import React from "react";
 import { AlertCircle, CheckCircle2, ChevronRight, Clock3 } from "lucide-react";
 import { Badge } from "@/components/shared/Badge";
 import { SectionCard } from "@/components/shared/SectionCard";
+import { AIErrorCallout } from "@/components/shared/AIErrorCallout";
 import type { HomePageProps, WorkspaceEvent, EventSource } from "@/lib/types";
 
 export function HomePage({
@@ -14,6 +15,7 @@ export function HomePage({
   dashboard,
   dailyBrief,
   loadingDailyBrief,
+  dailyBriefError,
   onGenerateDailyBrief,
   onCompleteTask,
   onOpenPage,
@@ -71,6 +73,7 @@ export function HomePage({
         }
       >
         <div className="space-y-4">
+          <AIErrorCallout message={dailyBriefError} />
           <p className="text-sm leading-6 text-slate-700">
             {dailyBrief?.content ??
               dashboard?.dailyBrief?.summary ??
@@ -112,9 +115,10 @@ export function HomePage({
                         e.stopPropagation();
                         onCompleteTask(task.id);
                       }}
+                      aria-label="Mark task complete"
                       className="mt-0.5 rounded-full border border-slate-300 p-1 text-slate-500 hover:bg-slate-100"
                     >
-                      <CheckCircle2 className="h-4 w-4" />
+                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                     </button>
                     <div>
                       <p className="font-medium text-slate-900">{task.title}</p>
