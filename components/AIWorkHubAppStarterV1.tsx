@@ -18,6 +18,7 @@ import {
   Sparkles,
   StickyNote,
   User,
+  X,
 } from "lucide-react";
 
 type PageId =
@@ -154,6 +155,7 @@ interface AiExtraction {
 interface Task {
   id: string;
   title: string;
+  description?: string | null;
   projectId: string;
   priority: ProjectPriority;
   status: TaskStatus;
@@ -230,10 +232,21 @@ interface SectionCardProps {
   className?: string;
 }
 
+interface SearchResult {
+  type: "project" | "task" | "note";
+  id: string;
+  title: string;
+  subtitle: string;
+}
+
 interface AppHeaderProps {
   title: string;
   subtitle?: string;
   onQuickAdd: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  searchResults: SearchResult[];
+  onSearchResultClick: (result: SearchResult) => void;
 }
 
 interface SidebarProps {
@@ -270,6 +283,8 @@ interface TasksPageProps {
   tasks: Task[];
   projects: Project[];
   onCompleteTask: (taskId: string) => void;
+  onCreateTask: () => void;
+  onEditTask: (task: Task) => void;
 }
 
 interface NotesPageProps {
@@ -279,6 +294,7 @@ interface NotesPageProps {
 
 interface CalendarPageProps {
   events: WorkspaceEvent[];
+  onCreateEvent: () => void;
 }
 
 const initialProjects: Project[] = [
@@ -485,7 +501,15 @@ function SectionCard({
   );
 }
 
-function AppHeader({ title, subtitle, onQuickAdd }: AppHeaderProps) {
+function AppHeader({
+  title,
+  subtitle,
+  onQuickAdd,
+  searchQuery,
+  onSearchChange,
+  searchResults,
+  onSearchResultClick,
+}: AppHeaderProps) {
   return (
     <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
       <div>
@@ -499,9 +523,36 @@ function AppHeader({ title, subtitle, onQuickAdd }: AppHeaderProps) {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 shadow-sm">
-          <Search className="h-4 w-4" />
-          <span>Search workspace</span>
+        <div className="relative">
+          <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm shadow-sm">
+            <Search className="h-4 w-4 shrink-0 text-slate-400" />
+            <input
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search workspace"
+              className="min-w-0 w-48 bg-transparent text-slate-700 outline-none placeholder:text-slate-400"
+            />
+          </div>
+          {searchQuery.trim() ? (
+            <div className="absolute left-0 right-0 top-full z-40 mt-1 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+              {searchResults.length > 0 ? (
+                searchResults.map((result) => (
+                  <button
+                    key={`${result.type}-${result.id}`}
+                    onClick={() => onSearchResultClick(result)}
+                    className="flex w-full flex-col gap-0.5 px-4 py-3 text-left hover:bg-slate-50"
+                  >
+                    <span className="text-sm font-medium text-slate-900">{result.title}</span>
+                    <span className="text-xs text-slate-500">{result.subtitle}</span>
+                  </button>
+                ))
+              ) : (
+                <div className="px-4 py-3 text-sm text-slate-500">
+                  No results for &ldquo;{searchQuery}&rdquo;
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
         <button
           onClick={onQuickAdd}
@@ -946,6 +997,8 @@ function ProjectsPage({
   projectContext,
   loadingProjectContext,
   onGenerateSummary,
+  onCreateProject,
+  onEditProject,
 }: {
   projects: Project[];
   tasks: Task[];
@@ -954,12 +1007,30 @@ function ProjectsPage({
   projectContext: ProjectContextData | null;
   loadingProjectContext: boolean;
   onGenerateSummary: (projectId: string) => void;
+  onCreateProject: () => void;
+  onEditProject: (project: Project) => void;
 }) {
   return (
     <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
       <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-slate-500">
+            {projects.length} project{projects.length !== 1 ? "s" : ""}
+          </p>
+          <button
+            onClick={onCreateProject}
+            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+          >
+            + New Project
+          </button>
+        </div>
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-1">
-          {projects.map((project) => {
+          {projects.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
+              No projects yet. Create one to get started.
+            </div>
+          ) : (
+          projects.map((project) => {
             const projectTasks = tasks.filter(
               (task) => task.projectId === project.id && task.status !== "done",
             );
@@ -973,11 +1044,19 @@ function ProjectsPage({
                 title={project.title}
                 subtitle={project.goal}
                 action={
-                  <Badge
-                    tone={project.priority === "high" ? "high" : "default"}
-                  >
-                    {project.priority}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      tone={project.priority === "high" ? "high" : "default"}
+                    >
+                      {project.priority}
+                    </Badge>
+                    <button
+                      onClick={() => onEditProject(project)}
+                      className="rounded-xl border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                    >
+                      Edit
+                    </button>
+                  </div>
                 }
               >
                 <div className="space-y-4">
@@ -1010,7 +1089,8 @@ function ProjectsPage({
                 </div>
               </SectionCard>
             );
-          })}
+          })
+          )}
         </div>
       </div>
 
@@ -1227,7 +1307,7 @@ function ProjectDetailPanel({
   );
 }
 
-function TasksPage({ tasks, projects, onCompleteTask }: TasksPageProps) {
+function TasksPage({ tasks, projects, onCompleteTask, onCreateTask, onEditTask }: TasksPageProps) {
   const projectMap = useMemo<Record<string, string>>(
     () =>
       Object.fromEntries(
@@ -1237,50 +1317,72 @@ function TasksPage({ tasks, projects, onCompleteTask }: TasksPageProps) {
   );
 
   return (
-    <SectionCard title="Tasks" subtitle="Execution view across your workspace">
+    <SectionCard
+      title="Tasks"
+      subtitle="Execution view across your workspace"
+      action={
+        <button
+          onClick={onCreateTask}
+          className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+        >
+          + New Task
+        </button>
+      }
+    >
       <div className="space-y-3">
-        {tasks.map((task) => (
-          <div
-            key={task.id}
-            className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between"
-          >
-            <div className="flex items-start gap-3">
-              <button
-                onClick={() => onCompleteTask(task.id)}
-                className="mt-0.5 rounded-full border border-slate-300 p-1 text-slate-500 hover:bg-slate-100"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-              </button>
-              <div>
-                <p className="font-medium text-slate-900">{task.title}</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {projectMap[task.projectId] || "Unassigned"}
-                </p>
-                <p className="mt-2 text-xs text-slate-400">
-                  AI next action: start with the most concrete deliverable
-                  first.
-                </p>
+        {tasks.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
+            No tasks yet. Create one to get started.
+          </div>
+        ) : (
+          tasks.map((task) => (
+            <div
+              key={task.id}
+              className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between"
+            >
+              <div className="flex items-start gap-3">
+                <button
+                  onClick={() => onCompleteTask(task.id)}
+                  className="mt-0.5 rounded-full border border-slate-300 p-1 text-slate-500 hover:bg-slate-100"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                </button>
+                <div>
+                  <p className="font-medium text-slate-900">{task.title}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {projectMap[task.projectId] || "Unassigned"}
+                  </p>
+                  {task.description ? (
+                    <p className="mt-1 text-xs text-slate-400">{task.description}</p>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge
+                  tone={
+                    task.priority === "urgent"
+                      ? "urgent"
+                      : task.priority === "high"
+                        ? "high"
+                        : "default"
+                  }
+                >
+                  {task.priority}
+                </Badge>
+                <Badge tone={task.status === "done" ? "success" : "default"}>
+                  {task.status}
+                </Badge>
+                <span className="text-sm text-slate-500">{task.dueDate}</span>
+                <button
+                  onClick={() => onEditTask(task)}
+                  className="rounded-xl border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  Edit
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge
-                tone={
-                  task.priority === "urgent"
-                    ? "urgent"
-                    : task.priority === "high"
-                      ? "high"
-                      : "default"
-                }
-              >
-                {task.priority}
-              </Badge>
-              <Badge tone={task.status === "done" ? "success" : "default"}>
-                {task.status}
-              </Badge>
-              <span className="text-sm text-slate-500">{task.dueDate}</span>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </SectionCard>
   );
@@ -1292,6 +1394,7 @@ function NotesPage({
   selectedNoteId,
   onSelectNote,
   onCreateNote,
+  onEditNote,
   noteExtraction,
   loadingExtraction,
   generatingExtraction,
@@ -1306,6 +1409,7 @@ function NotesPage({
   selectedNoteId: string | null;
   onSelectNote: (noteId: string) => void;
   onCreateNote: () => void;
+  onEditNote: (note: Note) => void;
   noteExtraction: AiExtraction | null;
   loadingExtraction: boolean;
   generatingExtraction: boolean;
@@ -1373,13 +1477,21 @@ function NotesPage({
           }
           action={
             selectedNote ? (
-              <button
-                onClick={() => onExtractTasks(selectedNote.id)}
-                disabled={generatingExtraction}
-                className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-              >
-                {generatingExtraction ? "Extracting..." : "Extract Tasks"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onEditNote(selectedNote)}
+                  className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => onExtractTasks(selectedNote.id)}
+                  disabled={generatingExtraction}
+                  className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                >
+                  {generatingExtraction ? "Extracting..." : "Extract Tasks"}
+                </button>
+              </div>
             ) : null
           }
         >
@@ -1473,26 +1585,40 @@ function NotesPage({
   );
 }
 
-function CalendarPage({ events }: CalendarPageProps) {
+function CalendarPage({ events, onCreateEvent }: CalendarPageProps) {
   return (
     <SectionCard
       title="Calendar"
       subtitle="Time-based commitments and focus blocks"
+      action={
+        <button
+          onClick={onCreateEvent}
+          className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+        >
+          + New Event
+        </button>
+      }
     >
       <div className="space-y-3">
-        {events.map((event) => (
-          <div
-            key={event.id}
-            className="rounded-2xl border border-slate-200 p-4"
-          >
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Calendar className="h-4 w-4" />
-              <span>{event.time}</span>
-            </div>
-            <p className="mt-2 font-medium text-slate-900">{event.title}</p>
-            <p className="mt-1 text-xs text-slate-500">{event.source}</p>
+        {events.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
+            No events yet. Create one or sync via automation.
           </div>
-        ))}
+        ) : (
+          events.map((event) => (
+            <div
+              key={event.id}
+              className="rounded-2xl border border-slate-200 p-4"
+            >
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                <Calendar className="h-4 w-4" />
+                <span>{event.time}</span>
+              </div>
+              <p className="mt-2 font-medium text-slate-900">{event.title}</p>
+              <p className="mt-1 text-xs text-slate-500">{event.source}</p>
+            </div>
+          ))
+        )}
       </div>
     </SectionCard>
   );
@@ -1839,6 +1965,735 @@ function SettingsPage({ automationRuns }: { automationRuns: AutomationRun[] }) {
   );
 }
 
+// ─── Modal shared style helpers ──────────────────────────────────────────────
+
+const inputCls =
+  "mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-400";
+
+const selectCls =
+  "mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-400 bg-white";
+
+const labelCls = "block text-sm font-medium text-slate-700";
+
+function ModalShell({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl p-1 text-slate-400 hover:bg-slate-100"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── CaptureModal ─────────────────────────────────────────────────────────────
+
+function CaptureModal({
+  open,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTitle("");
+      setContent("");
+      setError(null);
+    }
+  }, [open]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!content.trim()) {
+      setError("Content is required.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/inbox", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim() || null,
+          content: content.trim(),
+          sourceType: "manual",
+          itemType: "capture",
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onClose();
+      onSaved();
+    } catch {
+      setError("Failed to save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!open) return null;
+
+  return (
+    <ModalShell title="Quick Capture" onClose={onClose}>
+      <p className="mt-1 text-sm text-slate-500">Add anything to your inbox instantly.</p>
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <div>
+          <label className={labelCls}>
+            Title <span className="font-normal text-slate-400">(optional)</span>
+          </label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className={inputCls}
+            placeholder="Brief label"
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Content *</label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={3}
+            className={cn(inputCls, "resize-none")}
+            placeholder="What's on your mind?"
+          />
+        </div>
+        {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Capture"}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+// ─── ProjectFormModal ─────────────────────────────────────────────────────────
+
+function ProjectFormModal({
+  open,
+  onClose,
+  onSaved,
+  project,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+  project: Project | null;
+}) {
+  const [title, setTitle] = useState("");
+  const [goal, setGoal] = useState("");
+  const [priority, setPriority] = useState<ProjectPriority>("medium");
+  const [status, setStatus] = useState<ProjectStatus>("active");
+  const [dueDate, setDueDate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTitle(project?.title ?? "");
+      setGoal(project?.goal ?? "");
+      setPriority(project?.priority ?? "medium");
+      setStatus(project?.status ?? "active");
+      setDueDate(project?.dueDate ? project.dueDate.slice(0, 10) : "");
+      setError(null);
+    }
+  }, [open, project]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim()) {
+      setError("Title is required.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const url = project ? `/api/projects/${project.id}` : "/api/projects";
+      const method = project ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          goal: goal.trim() || null,
+          priority,
+          status,
+          dueDate: dueDate || null,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onClose();
+      onSaved();
+    } catch {
+      setError("Failed to save project. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!open) return null;
+
+  return (
+    <ModalShell title={project ? "Edit Project" : "New Project"} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <div>
+          <label className={labelCls}>Title *</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className={inputCls}
+            placeholder="Project title"
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Goal</label>
+          <input
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            className={inputCls}
+            placeholder="What does success look like?"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Priority</label>
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as ProjectPriority)}
+              className={selectCls}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Status</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as ProjectStatus)}
+              className={selectCls}
+            >
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className={labelCls}>Due Date</label>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className={inputCls}
+          />
+        </div>
+        {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {saving ? "Saving..." : project ? "Save Changes" : "Create Project"}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+// ─── TaskFormModal ────────────────────────────────────────────────────────────
+
+function TaskFormModal({
+  open,
+  onClose,
+  onSaved,
+  task,
+  projects,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+  task: Task | null;
+  projects: Project[];
+}) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [priority, setPriority] = useState<ProjectPriority>("medium");
+  const [status, setStatus] = useState<TaskStatus>("todo");
+  const [dueDate, setDueDate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTitle(task?.title ?? "");
+      setDescription(task?.description ?? "");
+      setProjectId(task?.projectId ?? "");
+      setPriority(task?.priority ?? "medium");
+      setStatus(task?.status ?? "todo");
+      setDueDate(task?.dueDate ? task.dueDate.slice(0, 10) : "");
+      setError(null);
+    }
+  }, [open, task]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim()) {
+      setError("Title is required.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const url = task ? `/api/tasks/${task.id}` : "/api/tasks";
+      const method = task ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || null,
+          projectId: projectId || null,
+          priority,
+          status,
+          dueDate: dueDate || null,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onClose();
+      onSaved();
+    } catch {
+      setError("Failed to save task. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!open) return null;
+
+  return (
+    <ModalShell title={task ? "Edit Task" : "New Task"} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <div>
+          <label className={labelCls}>Title *</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className={inputCls}
+            placeholder="Task title"
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            className={cn(inputCls, "resize-none")}
+            placeholder="Optional details"
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Project</label>
+          <select
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+            className={selectCls}
+          >
+            <option value="">Unassigned</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Priority</label>
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as ProjectPriority)}
+              className={selectCls}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Status</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as TaskStatus)}
+              className={selectCls}
+            >
+              <option value="todo">To Do</option>
+              <option value="in_progress">In Progress</option>
+              <option value="done">Done</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className={labelCls}>Due Date</label>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className={inputCls}
+          />
+        </div>
+        {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {saving ? "Saving..." : task ? "Save Changes" : "Create Task"}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+// ─── NoteFormModal ────────────────────────────────────────────────────────────
+
+function NoteFormModal({
+  open,
+  onClose,
+  onSaved,
+  note,
+  projects,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+  note: Note | null;
+  projects: Project[];
+}) {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTitle(note?.title ?? "");
+      setBody(note?.body ?? "");
+      setProjectId(note?.projectId ?? "");
+      setError(null);
+    }
+  }, [open, note]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !body.trim()) {
+      setError("Title and body are required.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const url = note ? `/api/notes/${note.id}` : "/api/notes";
+      const method = note ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          body: body.trim(),
+          projectId: projectId || null,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onClose();
+      onSaved();
+    } catch {
+      setError("Failed to save note. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!open) return null;
+
+  return (
+    <ModalShell title={note ? "Edit Note" : "New Note"} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <div>
+          <label className={labelCls}>Title *</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className={inputCls}
+            placeholder="Note title"
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Body *</label>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={5}
+            className={cn(inputCls, "resize-none")}
+            placeholder="Write your note here..."
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Project</label>
+          <select
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+            className={selectCls}
+          >
+            <option value="">Unassigned</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
+            ))}
+          </select>
+        </div>
+        {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {saving ? "Saving..." : note ? "Save Changes" : "Create Note"}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+// ─── EventFormModal ───────────────────────────────────────────────────────────
+
+function EventFormModal({
+  open,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTitle("");
+      setDate("");
+      setStartTime("");
+      setEndTime("");
+      setDescription("");
+      setLocation("");
+      setError(null);
+    }
+  }, [open]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !date || !startTime || !endTime) {
+      setError("Title, date, start time, and end time are required.");
+      return;
+    }
+    const startsAt = new Date(`${date}T${startTime}`).toISOString();
+    const endsAt = new Date(`${date}T${endTime}`).toISOString();
+    if (endsAt <= startsAt) {
+      setError("End time must be after start time.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || null,
+          location: location.trim() || null,
+          sourceType: "manual",
+          startsAt,
+          endsAt,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onClose();
+      onSaved();
+    } catch {
+      setError("Failed to save event. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!open) return null;
+
+  return (
+    <ModalShell title="New Event" onClose={onClose}>
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <div>
+          <label className={labelCls}>Title *</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className={inputCls}
+            placeholder="Event title"
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Date *</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className={inputCls}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Start Time *</label>
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>End Time *</label>
+            <input
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className={inputCls}
+            />
+          </div>
+        </div>
+        <div>
+          <label className={labelCls}>Location</label>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className={inputCls}
+            placeholder="Optional location"
+          />
+        </div>
+        <div>
+          <label className={labelCls}>Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={2}
+            className={cn(inputCls, "resize-none")}
+            placeholder="Optional notes"
+          />
+        </div>
+        {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Create Event"}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+// ─── Root component ───────────────────────────────────────────────────────────
+
 export default function AIWorkHubAppStarterV1() {
   const [page, setPage] = useState<PageId>("home");
   const [projects, setProjects] = useState<Project[]>([]);
@@ -1873,6 +2728,19 @@ export default function AIWorkHubAppStarterV1() {
   const [loadingCopilot, setLoadingCopilot] = useState(false);
   const [automationRuns, setAutomationRuns] = useState<AutomationRun[]>([]);
 
+  // Modal state
+  const [captureModalOpen, setCaptureModalOpen] = useState(false);
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+
   const subtitle: Record<PageId, string> = {
     home: "See what matters, decide faster, and move with clearer context.",
     inbox: "Review unprocessed items and turn them into structured work.",
@@ -1884,6 +2752,49 @@ export default function AIWorkHubAppStarterV1() {
     copilot: "Use AI as a grounded assistant over your actual workspace.",
     settings: "Manage account preferences and external connections.",
   };
+
+  const searchResults = useMemo<SearchResult[]>(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    const results: SearchResult[] = [];
+    projects
+      .filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          (p.goal ?? "").toLowerCase().includes(q),
+      )
+      .slice(0, 3)
+      .forEach((p) =>
+        results.push({
+          type: "project",
+          id: p.id,
+          title: p.title,
+          subtitle: `Project · ${p.status}`,
+        }),
+      );
+    tasks
+      .filter((t) => t.title.toLowerCase().includes(q))
+      .slice(0, 3)
+      .forEach((t) =>
+        results.push({
+          type: "task",
+          id: t.id,
+          title: t.title,
+          subtitle: `Task · ${t.status}`,
+        }),
+      );
+    notes
+      .filter(
+        (n) =>
+          n.title.toLowerCase().includes(q) ||
+          n.body.toLowerCase().includes(q),
+      )
+      .slice(0, 3)
+      .forEach((n) =>
+        results.push({ type: "note", id: n.id, title: n.title, subtitle: "Note" }),
+      );
+    return results;
+  }, [searchQuery, projects, tasks, notes]);
 
   async function loadWorkspaceData() {
     try {
@@ -2046,84 +2957,68 @@ export default function AIWorkHubAppStarterV1() {
     }
   }
 
-  async function handleCreateProject() {
-    try {
-      const response = await fetch("/api/projects", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: `New Project ${projects.length + 1}`,
-          goal: "Add real project creation flow",
-          priority: "medium",
-          status: "active",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create project.");
-      }
-
-      await loadWorkspaceData();
-      setPage("projects");
-    } catch (error) {
-      console.error("Failed to create project", error);
-    }
+  function handleOpenCreateProject() {
+    setEditingProject(null);
+    setProjectModalOpen(true);
   }
 
-  async function handleCreateTask() {
-    try {
-      const fallbackProjectId = projects[0]?.id ?? null;
+  function handleOpenEditProject(project: Project) {
+    setEditingProject(project);
+    setProjectModalOpen(true);
+  }
 
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: `New Task ${tasks.length + 1}`,
-          priority: "medium",
-          status: "todo",
-          projectId: fallbackProjectId,
-        }),
-      });
+  function handleCloseProjectModal() {
+    setProjectModalOpen(false);
+    setEditingProject(null);
+  }
 
-      if (!response.ok) {
-        throw new Error("Failed to create task.");
-      }
+  function handleOpenCreateTask() {
+    setEditingTask(null);
+    setTaskModalOpen(true);
+  }
 
-      await loadWorkspaceData();
+  function handleOpenEditTask(task: Task) {
+    setEditingTask(task);
+    setTaskModalOpen(true);
+  }
+
+  function handleCloseTaskModal() {
+    setTaskModalOpen(false);
+    setEditingTask(null);
+  }
+
+  function handleOpenCreateNote() {
+    setEditingNote(null);
+    setNoteModalOpen(true);
+  }
+
+  function handleOpenEditNote(note: Note) {
+    setEditingNote(note);
+    setNoteModalOpen(true);
+  }
+
+  function handleCloseNoteModal() {
+    setNoteModalOpen(false);
+    setEditingNote(null);
+  }
+
+  function handleOpenCreateEvent() {
+    setEventModalOpen(true);
+  }
+
+  function handleCloseEventModal() {
+    setEventModalOpen(false);
+  }
+
+  function handleSearchResultClick(result: SearchResult) {
+    setSearchQuery("");
+    if (result.type === "project") {
+      loadProjectContext(result.id);
+    } else if (result.type === "task") {
       setPage("tasks");
-    } catch (error) {
-      console.error("Failed to create task", error);
-    }
-  }
-
-  async function handleCreateNote() {
-    try {
-      const fallbackProjectId = projects[0]?.id ?? null;
-
-      const response = await fetch("/api/notes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: `New Note ${notes.length + 1}`,
-          body: "Write your idea or meeting notes here.",
-          projectId: fallbackProjectId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create note.");
-      }
-
-      await loadWorkspaceData();
+    } else if (result.type === "note") {
+      setSelectedNoteId(result.id);
       setPage("notes");
-    } catch (error) {
-      console.error("Failed to create note", error);
     }
   }
 
@@ -2517,6 +3412,8 @@ export default function AIWorkHubAppStarterV1() {
             projectContext={projectContext}
             loadingProjectContext={loadingProjectContext}
             onGenerateSummary={handleGenerateProjectSummary}
+            onCreateProject={handleOpenCreateProject}
+            onEditProject={handleOpenEditProject}
           />
         );
       case "tasks":
@@ -2525,10 +3422,12 @@ export default function AIWorkHubAppStarterV1() {
             tasks={tasks}
             projects={projects}
             onCompleteTask={handleCompleteTask}
+            onCreateTask={handleOpenCreateTask}
+            onEditTask={handleOpenEditTask}
           />
         );
       case "calendar":
-        return <CalendarPage events={events} />;
+        return <CalendarPage events={events} onCreateEvent={handleOpenCreateEvent} />;
       case "notes":
         return (
           <NotesPage
@@ -2536,7 +3435,8 @@ export default function AIWorkHubAppStarterV1() {
             projects={projects}
             selectedNoteId={selectedNoteId}
             onSelectNote={setSelectedNoteId}
-            onCreateNote={handleCreateNote}
+            onCreateNote={handleOpenCreateNote}
+            onEditNote={handleOpenEditNote}
             noteExtraction={noteExtraction}
             loadingExtraction={loadingExtraction}
             generatingExtraction={generatingExtraction}
@@ -2597,7 +3497,11 @@ export default function AIWorkHubAppStarterV1() {
           <AppHeader
             title={currentNav?.label || "Home"}
             subtitle={subtitle[page]}
-            onQuickAdd={() => setPage("inbox")}
+            onQuickAdd={() => setCaptureModalOpen(true)}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchResults={searchResults}
+            onSearchResultClick={handleSearchResultClick}
           />
 
           <div className="border-b border-slate-200 bg-white px-6 py-4">
@@ -2632,6 +3536,38 @@ export default function AIWorkHubAppStarterV1() {
           <div className="flex-1 px-6 py-6">{renderPage()}</div>
         </main>
       </div>
+
+      <CaptureModal
+        open={captureModalOpen}
+        projects={projects}
+        onClose={() => setCaptureModalOpen(false)}
+        onSaved={() => { setCaptureModalOpen(false); loadWorkspaceData(); }}
+      />
+      <ProjectFormModal
+        open={projectModalOpen}
+        project={editingProject}
+        onClose={handleCloseProjectModal}
+        onSaved={() => { handleCloseProjectModal(); loadWorkspaceData(); }}
+      />
+      <TaskFormModal
+        open={taskModalOpen}
+        task={editingTask}
+        projects={projects}
+        onClose={handleCloseTaskModal}
+        onSaved={() => { handleCloseTaskModal(); loadWorkspaceData(); }}
+      />
+      <NoteFormModal
+        open={noteModalOpen}
+        note={editingNote}
+        projects={projects}
+        onClose={handleCloseNoteModal}
+        onSaved={() => { handleCloseNoteModal(); loadWorkspaceData(); }}
+      />
+      <EventFormModal
+        open={eventModalOpen}
+        onClose={handleCloseEventModal}
+        onSaved={() => { handleCloseEventModal(); loadWorkspaceData(); }}
+      />
     </div>
   );
 }
