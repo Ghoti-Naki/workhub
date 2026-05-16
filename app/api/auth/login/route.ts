@@ -1,3 +1,13 @@
+/**
+ * POST /api/auth/login
+ *
+ * Single-user password gate. Compares the submitted password against
+ * AUTH_PASSWORD using a constant-time comparison to prevent timing attacks.
+ * On success, issues an HMAC-SHA256 signed session token in an httpOnly
+ * cookie valid for COOKIE_MAX_AGE seconds. The cookie is marked Secure in
+ * production. All session verification happens in the middleware (proxy.ts),
+ * not per-route — this is the only route that issues tokens.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import {
   verifyPassword,

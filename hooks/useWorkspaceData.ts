@@ -22,10 +22,16 @@ import { initialEvents } from "@/lib/constants";
 export function useWorkspaceData(setPage: (page: PageId) => void) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasksHasMore, setTasksHasMore] = useState(false);
+  const [tasksPage, setTasksPage] = useState(1);
+  const [loadingMoreTasks, setLoadingMoreTasks] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [inboxItems, setInboxItems] = useState<InboxItem[]>([]);
+  const [inboxHasMore, setInboxHasMore] = useState(false);
+  const [inboxPage, setInboxPage] = useState(1);
+  const [loadingMoreInbox, setLoadingMoreInbox] = useState(false);
   const [events, setEvents] = useState<WorkspaceEvent[]>(initialEvents);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [files, setFiles] = useState<FileRecord[]>([]);
@@ -64,9 +70,9 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
         automationRunsRes,
       ] = await Promise.all([
         fetch("/api/projects", { cache: "no-store" }),
-        fetch("/api/tasks", { cache: "no-store" }),
+        fetch("/api/tasks?page=1&pageSize=25", { cache: "no-store" }),
         fetch("/api/notes", { cache: "no-store" }),
-        fetch("/api/inbox", { cache: "no-store" }),
+        fetch("/api/inbox?page=1&pageSize=25", { cache: "no-store" }),
         fetch("/api/events", { cache: "no-store" }),
         fetch("/api/files", { cache: "no-store" }),
         fetch("/api/dashboard/home", { cache: "no-store" }),
@@ -111,8 +117,12 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
       setFiles(filesJson.data ?? []);
       setProjects(projectsJson.data ?? []);
       setTasks(tasksJson.data ?? []);
+      setTasksHasMore(!!(tasksJson.meta as Record<string, unknown>)?.hasMore);
+      setTasksPage(1);
       setNotes(notesJson.data ?? []);
       setInboxItems(inboxJson.data ?? []);
+      setInboxHasMore(!!(inboxJson.meta as Record<string, unknown>)?.hasMore);
+      setInboxPage(1);
       setDashboard(dashboardJson.data ?? null);
       setEvents(mappedEvents);
       setAutomationRuns(automationRunsJson.data ?? []);
@@ -121,8 +131,12 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
       setLoadError("Could not load dashboard data from the database yet.");
       setProjects([]);
       setTasks([]);
+      setTasksHasMore(false);
+      setTasksPage(1);
       setNotes([]);
       setInboxItems([]);
+      setInboxHasMore(false);
+      setInboxPage(1);
       setDashboard(null);
       setFiles([]);
       setDailyBrief(null);
@@ -390,6 +404,42 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
     );
   }
 
+  async function loadMoreTasks() {
+    if (!tasksHasMore || loadingMoreTasks) return;
+    try {
+      setLoadingMoreTasks(true);
+      const nextPage = tasksPage + 1;
+      const res = await fetch(`/api/tasks?page=${nextPage}&pageSize=25`, { cache: "no-store" });
+      if (!res.ok) return;
+      const json: ApiResponse<Task[]> = await res.json();
+      setTasks((prev) => [...prev, ...(json.data ?? [])]);
+      setTasksHasMore(!!(json.meta as Record<string, unknown>)?.hasMore);
+      setTasksPage(nextPage);
+    } catch (error) {
+      console.error("Failed to load more tasks", error);
+    } finally {
+      setLoadingMoreTasks(false);
+    }
+  }
+
+  async function loadMoreInbox() {
+    if (!inboxHasMore || loadingMoreInbox) return;
+    try {
+      setLoadingMoreInbox(true);
+      const nextPage = inboxPage + 1;
+      const res = await fetch(`/api/inbox?page=${nextPage}&pageSize=25`, { cache: "no-store" });
+      if (!res.ok) return;
+      const json: ApiResponse<InboxItem[]> = await res.json();
+      setInboxItems((prev) => [...prev, ...(json.data ?? [])]);
+      setInboxHasMore(!!(json.meta as Record<string, unknown>)?.hasMore);
+      setInboxPage(nextPage);
+    } catch (error) {
+      console.error("Failed to load more inbox items", error);
+    } finally {
+      setLoadingMoreInbox(false);
+    }
+  }
+
   useEffect(() => {
     loadWorkspaceData();
     loadCopilotHistory();
@@ -440,6 +490,12 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
     loadError,
     loadWorkspaceData,
     loadProjectContext,
+    loadMoreTasks,
+    tasksHasMore,
+    loadingMoreTasks,
+    loadMoreInbox,
+    inboxHasMore,
+    loadingMoreInbox,
     handleCompleteTask,
     handleCreateInboxItem,
     handleCreateFile,

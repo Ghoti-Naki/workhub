@@ -9,7 +9,7 @@ import { FilterBar } from "@/components/shared/FilterBar";
 import { SkeletonRow } from "@/components/shared/Skeleton";
 import type { TasksPageProps } from "@/lib/types";
 
-export function TasksPage({ tasks, projects, loading, onCompleteTask, onCreateTask, onEditTask }: TasksPageProps) {
+export function TasksPage({ tasks, projects, loading, hasMore, loadingMore, onLoadMore, onCompleteTask, onCreateTask, onEditTask }: TasksPageProps) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
 
@@ -142,6 +142,17 @@ export function TasksPage({ tasks, projects, loading, onCompleteTask, onCreateTa
             </div>
           ))
         )}
+            {hasMore && (
+              <div className="pt-2 text-center">
+                <button
+                  onClick={onLoadMore}
+                  disabled={loadingMore}
+                  className="rounded-2xl border border-slate-200 px-6 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {loadingMore ? "Loading…" : "Load more tasks"}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>

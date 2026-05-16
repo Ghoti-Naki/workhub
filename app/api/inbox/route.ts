@@ -1,24 +1,33 @@
 import { prisma } from "@/lib/prisma";
+import { ok, created, VALIDATION_ERROR, INTERNAL_ERROR } from "@/lib/api-response";
 
-export async function GET() {
-  const inboxItems = await prisma.inboxItem.findMany({
-    orderBy: { updatedAt: "desc" },
-    include: {
-      project: true,
-    },
-  });
+const DEFAULT_PAGE_SIZE = 25;
 
-  return Response.json({
-    data: inboxItems,
-    meta: {},
-    error: null,
-  });
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const pageSize = Math.min(
+    100,
+    Math.max(1, parseInt(searchParams.get("pageSize") ?? String(DEFAULT_PAGE_SIZE), 10)),
+  );
+  const skip = (page - 1) * pageSize;
+
+  const [inboxItems, total] = await Promise.all([
+    prisma.inboxItem.findMany({
+      orderBy: { updatedAt: "desc" },
+      skip,
+      take: pageSize,
+      include: { project: true },
+    }),
+    prisma.inboxItem.count(),
+  ]);
+
+  return ok(inboxItems, { page, pageSize, total, hasMore: skip + inboxItems.length < total });
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const title = typeof body.title === "string" ? body.title.trim() : null;
     const content = typeof body.content === "string" ? body.content.trim() : "";
     const sourceType =
@@ -28,52 +37,15 @@ export async function POST(req: Request) {
     const projectId =
       typeof body.projectId === "string" ? body.projectId : null;
 
-    if (!content) {
-      return Response.json(
-        {
-          data: null,
-          meta: {},
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Inbox item content is required.",
-          },
-        },
-        { status: 422 },
-      );
-    }
+    if (!content) return VALIDATION_ERROR("Inbox item content is required.");
 
     const inboxItem = await prisma.inboxItem.create({
-      data: {
-        title,
-        content,
-        sourceType,
-        itemType,
-        projectId,
-      },
-      include: {
-        project: true,
-      },
+      data: { title, content, sourceType, itemType, projectId },
+      include: { project: true },
     });
 
-    return Response.json(
-      {
-        data: inboxItem,
-        meta: {},
-        error: null,
-      },
-      { status: 201 },
-    );
+    return created(inboxItem);
   } catch {
-    return Response.json(
-      {
-        data: null,
-        meta: {},
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create inbox item.",
-        },
-      },
-      { status: 500 },
-    );
+    return INTERNAL_ERROR("Failed to create inbox item.");
   }
 }

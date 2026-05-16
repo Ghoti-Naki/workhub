@@ -5,6 +5,7 @@ import type { PageId, SearchResult } from "@/lib/types";
 import { navItems, subtitle } from "@/lib/constants";
 import { useWorkspaceData } from "@/hooks/useWorkspaceData";
 import { useModals } from "@/hooks/useModals";
+import { useAnnounce } from "@/components/shared/Announcer";
 import { AppHeader } from "@/components/app-shell/AppHeader";
 import { Sidebar } from "@/components/app-shell/Sidebar";
 import { HomePage } from "@/components/pages/HomePage";
@@ -28,6 +29,7 @@ export default function AIWorkHubApp() {
   const [page, setPage] = useState<PageId>("home");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const { announce } = useAnnounce();
   const data = useWorkspaceData(setPage);
   const modals = useModals();
 
@@ -92,6 +94,9 @@ export default function AIWorkHubApp() {
             inboxItems={data.inboxItems}
             onConvertInbox={data.handleConvertInbox}
             onArchiveInbox={data.handleArchiveInbox}
+            hasMore={data.inboxHasMore}
+            loadingMore={data.loadingMoreInbox}
+            onLoadMore={data.loadMoreInbox}
           />
         );
       case "projects":
@@ -114,6 +119,9 @@ export default function AIWorkHubApp() {
             tasks={data.tasks}
             projects={data.projects}
             loading={data.loadingData}
+            hasMore={data.tasksHasMore}
+            loadingMore={data.loadingMoreTasks}
+            onLoadMore={data.loadMoreTasks}
             onCompleteTask={data.handleCompleteTask}
             onCreateTask={modals.openCreateTask}
             onEditTask={modals.openEditTask}
@@ -236,32 +244,32 @@ export default function AIWorkHubApp() {
         open={modals.captureModalOpen}
         projects={data.projects}
         onClose={modals.closeCaptureModal}
-        onSaved={() => { modals.closeCaptureModal(); data.loadWorkspaceData(); }}
+        onSaved={() => { modals.closeCaptureModal(); data.loadWorkspaceData(); announce("Item captured to inbox."); }}
       />
       <ProjectFormModal
         open={modals.projectModalOpen}
         project={modals.editingProject}
         onClose={modals.closeProjectModal}
-        onSaved={() => { modals.closeProjectModal(); data.loadWorkspaceData(); }}
+        onSaved={() => { modals.closeProjectModal(); data.loadWorkspaceData(); announce(modals.editingProject ? "Project updated." : "Project created."); }}
       />
       <TaskFormModal
         open={modals.taskModalOpen}
         task={modals.editingTask}
         projects={data.projects}
         onClose={modals.closeTaskModal}
-        onSaved={() => { modals.closeTaskModal(); data.loadWorkspaceData(); }}
+        onSaved={() => { modals.closeTaskModal(); data.loadWorkspaceData(); announce(modals.editingTask ? "Task updated." : "Task created."); }}
       />
       <NoteFormModal
         open={modals.noteModalOpen}
         note={modals.editingNote}
         projects={data.projects}
         onClose={modals.closeNoteModal}
-        onSaved={() => { modals.closeNoteModal(); data.loadWorkspaceData(); }}
+        onSaved={() => { modals.closeNoteModal(); data.loadWorkspaceData(); announce(modals.editingNote ? "Note updated." : "Note created."); }}
       />
       <EventFormModal
         open={modals.eventModalOpen}
         onClose={modals.closeEventModal}
-        onSaved={() => { modals.closeEventModal(); data.loadWorkspaceData(); }}
+        onSaved={() => { modals.closeEventModal(); data.loadWorkspaceData(); announce("Event created."); }}
       />
     </div>
   );

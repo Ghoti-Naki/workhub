@@ -1,3 +1,12 @@
+/**
+ * POST /api/ai/daily-brief
+ *
+ * Generates a concise daily brief using the workspace's current tasks, events,
+ * and inbox. The brief is persisted as an AiOutput record so it can be
+ * retrieved later without re-generating. Falls back gracefully when
+ * OPENAI_API_KEY is absent — the AI layer returns a heuristic summary instead
+ * of throwing. Callers should check `json.error.code === "AI_NOT_CONFIGURED"`.
+ */
 import { prisma } from "@/lib/prisma";
 import { generateText } from "@/lib/ai";
 

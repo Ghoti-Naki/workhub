@@ -1,3 +1,11 @@
+/**
+ * POST /api/automation/events-upsert
+ *
+ * Creates or updates a calendar event from an n8n workflow (e.g. Google
+ * Calendar sync). Matches by `externalId` — if a record with that ID already
+ * exists it is updated in place; otherwise a new event is created. Requires
+ * AUTOMATION_SECRET Bearer token. Logs every run to AutomationRun.
+ */
 import { prisma } from "@/lib/prisma";
 import { isValidAutomationSecret } from "@/lib/automation";
 import {

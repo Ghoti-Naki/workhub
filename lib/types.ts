@@ -251,6 +251,9 @@ export interface InboxPageProps {
   inboxItems: InboxItem[];
   onConvertInbox: (inboxId: string, targetType: ConvertTargetType) => void;
   onArchiveInbox: (inboxId: string) => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export interface ProjectsPageProps {
@@ -263,6 +266,9 @@ export interface TasksPageProps {
   tasks: Task[];
   projects: Project[];
   loading?: boolean;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
   onCompleteTask: (taskId: string) => void;
   onCreateTask: () => void;
   onEditTask: (task: Task) => void;

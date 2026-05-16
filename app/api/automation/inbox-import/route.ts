@@ -1,3 +1,12 @@
+/**
+ * POST /api/automation/inbox-import
+ *
+ * Ingests items from n8n webhooks into the inbox. If `externalId` is supplied,
+ * an existing item with that ID is updated rather than duplicated (upsert
+ * semantics). Requests without a valid AUTOMATION_SECRET Bearer token are
+ * rejected with 403. Every call — including failures — is logged to
+ * AutomationRun so n8n workflow health is always visible in the UI.
+ */
 import { prisma } from "@/lib/prisma";
 import { isValidAutomationSecret } from "@/lib/automation";
 import {

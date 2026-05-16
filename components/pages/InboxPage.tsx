@@ -8,7 +8,7 @@ import { SectionCard } from "@/components/shared/SectionCard";
 import { cn } from "@/lib/types";
 import type { InboxPageProps } from "@/lib/types";
 
-export function InboxPage({ inboxItems, onConvertInbox, onArchiveInbox }: InboxPageProps) {
+export function InboxPage({ inboxItems, onConvertInbox, onArchiveInbox, hasMore, loadingMore, onLoadMore }: InboxPageProps) {
   const [selectedId, setSelectedId] = useState<string | null>(
     inboxItems[0]?.id ?? null,
   );
@@ -55,6 +55,17 @@ export function InboxPage({ inboxItems, onConvertInbox, onArchiveInbox }: InboxP
               </p>
             </button>
           ))}
+          {hasMore && (
+            <div className="px-2 pb-2 text-center">
+              <button
+                onClick={onLoadMore}
+                disabled={loadingMore}
+                className="w-full rounded-2xl border border-slate-200 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {loadingMore ? "Loading…" : "Load more"}
+              </button>
+            </div>
+          )}
         </div>
       </SectionCard>
 
