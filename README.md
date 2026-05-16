@@ -129,8 +129,6 @@ Start here:
 7. Make Search functional.
 8. Add authentication before public deployment.
 
-See `TASK_LIST.md` for the full checklist.
-
 ---
 
 ## Safety Notes
