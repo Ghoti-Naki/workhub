@@ -34,11 +34,8 @@ export async function POST(_req: Request, context: RouteContext) {
         sourceType: "note",
         sourceId: id,
         outputType: "note_task_extraction",
-        payload: {
-          noteId: note.id,
-          noteTitle: note.title,
-          suggestions,
-        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        payload: { noteId: note.id, noteTitle: note.title, suggestions } as any,
         status: "pending",
       },
     });

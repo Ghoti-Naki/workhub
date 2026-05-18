@@ -200,13 +200,13 @@ ${files.map((f) => `- ${f.name} | ${f.fileType ?? f.mimeType ?? "unknown"} | ${f
       if (!fullText) fullText = buildFallback(prompt);
 
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const output = await prisma.aiOutput.create({
           data: {
             outputType: "copilot_answer",
             targetType: "workspace",
             title: prompt,
             content: fullText,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             metadata: { sources } as any,
           },
         });

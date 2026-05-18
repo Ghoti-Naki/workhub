@@ -48,18 +48,16 @@ const ICON_STYLES: Record<ToastTone, string> = {
 };
 
 function UndoBar({ expiresAt }: { expiresAt: number }) {
-  const [remaining, setRemaining] = useState(Math.ceil((expiresAt - Date.now()) / 1000));
+  const [pct, setPct] = useState(100);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const r = Math.ceil((expiresAt - Date.now()) / 1000);
-      setRemaining(r);
-      if (r <= 0) clearInterval(interval);
+      const p = Math.max(0, ((expiresAt - Date.now()) / 5000) * 100);
+      setPct(p);
+      if (p <= 0) clearInterval(interval);
     }, 250);
     return () => clearInterval(interval);
   }, [expiresAt]);
-
-  const pct = Math.max(0, ((expiresAt - Date.now()) / 5000) * 100);
 
   return (
     <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-black/10">

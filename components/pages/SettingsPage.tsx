@@ -45,6 +45,7 @@ export function SettingsPage({
   const [workspaceName, setWorkspaceName] = useState(workspaceSettings?.workspaceName ?? "AI Work Hub");
   const [timezone, setTimezone] = useState(workspaceSettings?.timezone ?? "Asia/Jakarta");
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (workspaceSettings) {
       setWorkspaceName(workspaceSettings.workspaceName);

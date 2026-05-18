@@ -18,6 +18,7 @@ import type {
   WorkspaceSettings,
   ApiResponse,
   ProjectStatus,
+  EventSource,
 } from "@/lib/types";
 import { initialEvents } from "@/lib/constants";
 
@@ -105,7 +106,8 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
       const tasksJson: ApiResponse<Task[]> = await tasksRes.json();
       const notesJson: ApiResponse<Note[]> = await notesRes.json();
       const inboxJson: ApiResponse<InboxItem[]> = await inboxRes.json();
-      const eventsJson: ApiResponse<any[]> = await eventsRes.json();
+      type RawEvent = { id: string; title: string; startsAt: string | null; endsAt: string | null; sourceType: EventSource; description: string | null; location: string | null };
+      const eventsJson: ApiResponse<RawEvent[]> = await eventsRes.json();
       const dashboardJson: ApiResponse<DashboardData> = await dashboardRes.json();
       const mappedEvents: WorkspaceEvent[] = (eventsJson.data ?? []).map((e) => {
         const start = e.startsAt
@@ -628,11 +630,13 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
     }
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     loadWorkspaceData();
     loadCopilotHistory();
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!notes.length) {
       setSelectedNoteId(null);
@@ -643,6 +647,7 @@ export function useWorkspaceData(setPage: (page: PageId) => void) {
     if (!selectedNoteId) setSelectedNoteId(notes[0].id);
   }, [notes, selectedNoteId]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (selectedNoteId) loadLatestNoteExtraction(selectedNoteId);
   }, [selectedNoteId]);

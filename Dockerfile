@@ -9,7 +9,7 @@ RUN npm ci
 
 # Copy source and generate Prisma client before build
 COPY . .
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 RUN npm run build
 
 # ── Production stage ──────────────────────────────────────────────────────────
@@ -26,10 +26,8 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Prisma client and schema needed at runtime for migrations
+# Prisma generated client needed at runtime
 COPY --from=builder /app/generated ./generated
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 3000
 

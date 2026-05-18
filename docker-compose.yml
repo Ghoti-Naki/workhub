@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16-alpine
@@ -18,12 +16,26 @@ services:
       timeout: 5s
       retries: 5
 
+  migrate:
+    build:
+      context: .
+      target: builder
+    command: node node_modules/prisma/build/index.js migrate deploy
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://workhub:workhub@db:5432/workhub
+    restart: "no"
+
   app:
     build: .
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgresql://workhub:workhub@db:5432/workhub
       AUTH_PASSWORD: ${AUTH_PASSWORD}

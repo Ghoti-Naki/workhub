@@ -32,6 +32,7 @@ export function TaskFormModal({
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (open) {
       setTitle(task?.title ?? "");

@@ -13,6 +13,7 @@ export async function createAutomationRun(input: {
       source: input.source,
       externalId: input.externalId ?? null,
       idempotencyKey: input.idempotencyKey ?? null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       payload: (input.payload ?? null) as any,
       status: "started",
     },
@@ -28,6 +29,7 @@ export async function completeAutomationRun(
     where: { id: runId },
     data: {
       status: "success",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       result: (result ?? null) as any,
       message: message ?? null,
     },
@@ -44,6 +46,7 @@ export async function failAutomationRun(
     data: {
       status: "failed",
       message,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       result: (result ?? null) as any,
     },
   });

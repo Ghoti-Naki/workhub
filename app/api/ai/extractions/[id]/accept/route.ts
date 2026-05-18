@@ -20,7 +20,7 @@ export async function POST(req: Request, context: RouteContext) {
     const body = await req.json();
 
     const selectedIndices: number[] = Array.isArray(body.selectedIndices)
-      ? body.selectedIndices.filter((value: any) => typeof value === "number")
+      ? body.selectedIndices.filter((value: unknown) => typeof value === "number")
       : [];
 
     const extraction = await prisma.aiExtraction.findUnique({

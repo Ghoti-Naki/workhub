@@ -142,9 +142,8 @@ ${files.map((f) => `- ${f.name} | ${f.fileType ?? f.mimeType ?? "unknown"} | ${f
         targetType: "workspace",
         title: prompt,
         content: answer,
-        metadata: {
-          sources,
-        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        metadata: { sources } as any,
       },
     });
 
